@@ -20,7 +20,7 @@ import weave
 from rvla.weave_init import ensure_weave_init
 ensure_weave_init()
 
-from openai import OpenAI
+from rvla.openai_client import get_openai_client
 
 
 @dataclass
@@ -79,7 +79,7 @@ def optimize_prompt(
     This is the "weight tweaking" equivalent for API-based models:
     we improve the prompt based on what we've learned works.
     """
-    client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+    client = get_openai_client()
     
     # Find relevant strategies
     relevant_strategies = [

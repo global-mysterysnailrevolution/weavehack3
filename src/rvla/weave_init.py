@@ -1,6 +1,7 @@
 """Centralized Weave initialization to ensure traces are always logged."""
 
 import os
+import sys
 from typing import Optional
 
 import weave
@@ -36,9 +37,12 @@ def ensure_weave_init(project: Optional[str] = None, entity: Optional[str] = Non
     try:
         weave.init(full_project_name)
         _weave_initialized = True
-        print(f"[WEAVE] Initialized: {full_project_name}")
+        # Only print if not in quiet mode (MCP servers need quiet stdout)
+        if not os.getenv("WEAVE_QUIET"):
+            print(f"[WEAVE] Initialized: {full_project_name}", file=sys.stderr)
     except Exception as e:
-        print(f"[WARN] Weave initialization failed: {e}")
+        if not os.getenv("WEAVE_QUIET"):
+            print(f"[WARN] Weave initialization failed: {e}", file=sys.stderr)
         # Try to initialize anyway with minimal config
         try:
             weave.init(project_name)

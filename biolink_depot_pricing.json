@@ -1,0 +1,30 @@
+{
+  "products": [
+    {
+      "name": "BioLinkDepot.com",
+      "price": "$3,495",
+      "description": "This domain is for sale",
+      "url": "https://www.HugeDomains.com/shopping_cart.cfm?d=BioLinkDepot&e=com"
+    },
+    {
+      "name": "Depot88.com",
+      "price": "$6,495",
+      "description": null,
+      "url": "https://www.HugeDomains.com/domain_profile.cfm?d=Depot88.com"
+    },
+    {
+      "name": "CvDepot.com",
+      "price": "$5,395",
+      "description": null,
+      "url": "https://www.HugeDomains.com/domain_profile.cfm?d=CvDepot.com"
+    },
+    {
+      "name": "DepotV.com",
+      "price": "$2,495",
+      "description": null,
+      "url": "https://www.HugeDomains.com/domain_profile.cfm?d=DepotV.com"
+    }
+  ],
+  "store_name": "HugeDomains",
+  "currency": "USD"
+}

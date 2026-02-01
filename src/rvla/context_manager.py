@@ -9,7 +9,7 @@ from datetime import datetime
 import json
 
 import weave
-from openai import OpenAI
+from rvla.openai_client import get_openai_client
 
 
 @dataclass
@@ -26,7 +26,7 @@ class Event:
 @weave.op()
 def summarize_events(events: list[Event], max_tokens: int = 500) -> str:
     """Summarize a list of events into a compressed representation."""
-    client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+    client = get_openai_client()
     
     if not events:
         return "No events to summarize."
@@ -65,7 +65,7 @@ Keep it concise but informative."""
 @weave.op()
 def embed_event(event: Event) -> list[float]:
     """Generate embedding for an event for semantic search."""
-    client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+    client = get_openai_client()
     
     text = f"{event.type}: {event.content}"
     
@@ -84,7 +84,7 @@ def retrieve_relevant_events(
     top_k: int = 5,
 ) -> list[Event]:
     """Retrieve most relevant events using semantic similarity."""
-    client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+    client = get_openai_client()
     
     if not events:
         return []

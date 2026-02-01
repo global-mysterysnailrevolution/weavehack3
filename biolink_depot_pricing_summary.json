@@ -1,0 +1,354 @@
+{
+  "store": "Biolink Depot",
+  "total_products": 56,
+  "products": [
+    {
+      "name": "0.50ml Non coded Screwtop Tubes V-bottom Twistlock Snaplock without cap bulk",
+      "price": "$99.99",
+      "product_code": "1757614643-a0f1e55a",
+      "description": ""
+    },
+    {
+      "name": "0.5mL Glass Conical Vial with Inserts",
+      "price": "$55.51",
+      "product_code": "1757623429-80a7f731",
+      "description": ""
+    },
+    {
+      "name": "0.5ml Sample Vials, Self-standing, External Thread, Polypropylene, Non-pyrogenic, RNase/DNase Free, Sterile",
+      "price": "$486.00",
+      "product_code": "1757535019-a2a3166d",
+      "description": ""
+    },
+    {
+      "name": "0.5ml Screw Cap Tube, Knurl, Skirted, Natural",
+      "price": "$755.60",
+      "product_code": "1757454113-c2d84fe7",
+      "description": ""
+    },
+    {
+      "name": "0.75ml Non coded Screwtop Tubes V-bottom Twistock Snaplock bulk",
+      "price": "$39.95",
+      "product_code": "1757614709-9a8c4541",
+      "description": ""
+    },
+    {
+      "name": "1.2mL Micro Titer Tubes",
+      "price": "$116.89",
+      "product_code": "1757540429-3083cbca",
+      "description": ""
+    },
+    {
+      "name": "1.5mL Glass FB Vials in Vial Loader",
+      "price": "$64.50",
+      "product_code": "1757966578-07248e1c",
+      "description": ""
+    },
+    {
+      "name": "1.5mL Microcentrifuge Tube with Locking Snap Cap",
+      "price": "$29.75",
+      "product_code": "1757454033-9775039e",
+      "description": ""
+    },
+    {
+      "name": "1.5ml Screw Tube, Amber, Skirted, Ribbed, Non-Graduated",
+      "price": "$52.30",
+      "product_code": "1757538704-74e9c674",
+      "description": ""
+    },
+    {
+      "name": "10 µL Capillaries/Pistons Presterilized",
+      "price": "$135.80",
+      "product_code": "1757616429-91c9df4a",
+      "description": ""
+    },
+    {
+      "name": "100 ml Clear Advantage Reagent Reservoirs",
+      "price": "$14.51",
+      "product_code": "1757452335-7ff9812d",
+      "description": ""
+    },
+    {
+      "name": "1000uL Crimp-Top LV PX Vials",
+      "price": "$19.49",
+      "product_code": "1757967176-60b4c043",
+      "description": ""
+    },
+    {
+      "name": "100uL Crimp-Top LV PX Vials",
+      "price": "$24.40",
+      "product_code": "1757965311-8771d223",
+      "description": ""
+    },
+    {
+      "name": "10mL CLR Headspace Vial Tap Top, Flat Bottom",
+      "price": "$15.00",
+      "product_code": "1757963406-371c583e",
+      "description": ""
+    },
+    {
+      "name": "10x1 Racked Non Low Retention Pre-Sterile",
+      "price": "$22.50",
+      "product_code": "1757617352-96ea1c8b",
+      "description": ""
+    },
+    {
+      "name": "10µl Axygen Eco Refills, 2 Stack, P2/P10 Gilson Style",
+      "price": "$15.36",
+      "product_code": "1757618039-ad829b2b",
+      "description": ""
+    },
+    {
+      "name": "10µl Axygen Eco Refills, Gilson Style Tips",
+      "price": "$15.00",
+      "product_code": "1757619833-df604efd",
+      "description": ""
+    },
+    {
+      "name": "10µl Tip Environmentally Sensitive Packaging Low Retention",
+      "price": "$20.00",
+      "product_code": "1757617212-80ddefe7",
+      "description": ""
+    },
+    {
+      "name": "12 Channel Reagent Reservoirs, 5mL per channel",
+      "price": "$16.66",
+      "product_code": "1757451211-aeba4644",
+      "description": ""
+    },
+    {
+      "name": "12 Channel Reagent Reservoirs, 5mL per channel, Pyrogen-free, RNase/DNase certified, sterile",
+      "price": "$13.68",
+      "product_code": "1757451138-2d3f13eb",
+      "description": ""
+    },
+    {
+      "name": "12 x 32mm Amber Target Crimp ID Vial",
+      "price": "$10.48",
+      "product_code": "1757966511-2d658f1a",
+      "description": ""
+    },
+    {
+      "name": "12-Channel Reservoir",
+      "price": "$15.00",
+      "product_code": "1757450315-34a29303",
+      "description": ""
+    },
+    {
+      "name": "1250µL Low Retention Reload Inserts",
+      "price": "$15.00",
+      "product_code": "1757620031-32e120dd",
+      "description": ""
+    },
+    {
+      "name": "14 ml Polypropylene Round-Bottom Tube 17 x 100 mm style",
+      "price": "$15.00",
+      "product_code": "1757537569-d2f9fa4e",
+      "description": ""
+    },
+    {
+      "name": "15L Cycler Drainage Bag",
+      "price": "$45.00",
+      "product_code": "1757452867-a5c9887e",
+      "description": ""
+    },
+    {
+      "name": "15mL Urine Centrifuge Tubes, Disposable/Graduated/Conical",
+      "price": "$30.00",
+      "product_code": "1757537229-c7db411d",
+      "description": ""
+    },
+    {
+      "name": "17 x 100 Tube, PS",
+      "price": "$30.00",
+      "product_code": "1757534016-77b522ad",
+      "description": ""
+    },
+    {
+      "name": "175 cm² Flask",
+      "price": "$25.00",
+      "product_code": "1757018543-63ec5a68",
+      "description": ""
+    },
+    {
+      "name": "1mL Pipette Tips, Universal, Autoclavable, Widely Compatible",
+      "price": "$15.00",
+      "product_code": "1757618413-7ce441c5",
+      "description": ""
+    },
+    {
+      "name": "1uL Inoculation Loop with Needle, Blue, Individually Wrapped",
+      "price": "$12.00",
+      "product_code": "1758668525-6a726c01",
+      "description": ""
+    },
+    {
+      "name": "2 ml Self Standing Screw Cap Tubes",
+      "price": "$20.00",
+      "product_code": "1757538601-f91175a8",
+      "description": ""
+    },
+    {
+      "name": "2.0 ml Cryogenic Vials, Yellow Cap, Internal Thread, Round Bottom, Self Standing",
+      "price": "$35.54",
+      "product_code": "1757535055-cbf64681",
+      "description": ""
+    },
+    {
+      "name": "2.0ml Sample Vials, Self-standing, External Thread, Polypropylene",
+      "price": "$25.00",
+      "product_code": "1757454704-c270c791",
+      "description": ""
+    },
+    {
+      "name": "200UL Clear Grad EZ Rack Refill",
+      "price": "$285.00",
+      "product_code": "1757618569-c2ff8860",
+      "description": ""
+    },
+    {
+      "name": "200ul Pipette Tips, Universal, RNase/DNase Free",
+      "price": "$45.00",
+      "product_code": "1757619340-bf924c33",
+      "description": ""
+    },
+    {
+      "name": "20mL Vial Serum Type Clear Glass",
+      "price": "$32.00",
+      "product_code": "1757963287-40d12457",
+      "description": ""
+    },
+    {
+      "name": "225 cm² Flask, Canted Neck, Treated",
+      "price": "$284.69",
+      "product_code": "1757450111-9a172747",
+      "description": ""
+    },
+    {
+      "name": "225 cm² Flask, Canted Neck, Treated",
+      "price": "$284.69",
+      "product_code": "1757450145-f7e507b8",
+      "description": ""
+    },
+    {
+      "name": "24 inch polypropylene nonwoven hand sewn flat Buffon cap red",
+      "price": "$45.00",
+      "product_code": "1757541039-76c7b42e",
+      "description": ""
+    },
+    {
+      "name": "24-Well Plate, 10.4mL, Square Well, Round Bottom, Individually Wrapped with Lid, Sterile",
+      "price": "$26.00",
+      "product_code": "1757621019-b2fc94bd",
+      "description": ""
+    },
+    {
+      "name": "25 ml Divided Reservoirs, Sterile, Polypropylene",
+      "price": "$10.00",
+      "product_code": "1757452379-07b1254d",
+      "description": ""
+    },
+    {
+      "name": "250 µL Capillaries/Pistons Presterilized",
+      "price": "$10.00",
+      "product_code": "1757616480-a6b832ec",
+      "description": ""
+    },
+    {
+      "name": "250uL Wide-Bore Filtered Tips",
+      "price": "$26.00",
+      "product_code": "1757618113-55a2240a",
+      "description": ""
+    },
+    {
+      "name": "25ml Reagent Reservoir",
+      "price": "$10.00",
+      "product_code": "1757451071-3c2a0981",
+      "description": ""
+    },
+    {
+      "name": "300 µl GRIPTIP Sterile Filter Racks of 96 Tips",
+      "price": "$19.50",
+      "product_code": "1757616004-d16cfb9d",
+      "description": ""
+    },
+    {
+      "name": "300uL Sterile Tips, 5 Racks of 96",
+      "price": "$19.50",
+      "product_code": "1757615605-119fb128",
+      "description": ""
+    },
+    {
+      "name": "300µL Polypropylene 9mm Vial",
+      "price": "$30.00",
+      "product_code": "1757965350-8823eb1f",
+      "description": ""
+    },
+    {
+      "name": "384 Well Plate Black, w/Lid Cell Culture Sterile PS 120 ul Well",
+      "price": "$52.00",
+      "product_code": "1758650310-47220cfd",
+      "description": ""
+    },
+    {
+      "name": "384-well conical bottom polypropylene plate",
+      "price": "$75.00",
+      "product_code": "1757622739-c201965d",
+      "description": ""
+    },
+    {
+      "name": "3ML Amber Diagnostic Vial",
+      "price": "$15.00",
+      "product_code": "1757963506-fa7f748f",
+      "description": ""
+    },
+    {
+      "name": "4.0 ml Cryogenic Vials, Internal Thread, Round Bottom",
+      "price": "$43.56",
+      "product_code": "1757454648-a8eff59c",
+      "description": ""
+    },
+    {
+      "name": "40 mL Dounce Tissue Grinders",
+      "price": "$250.00",
+      "product_code": "1757964237-a49a3a0b",
+      "description": ""
+    },
+    {
+      "name": "4mL CLR STV White Graduated Vial",
+      "price": "$20.00",
+      "product_code": "1757967214-f4b03d34",
+      "description": ""
+    },
+    {
+      "name": "4oz Flint Glass Jar",
+      "price": "$1.00",
+      "product_code": "1757963216-c366072e",
+      "description": ""
+    },
+    {
+      "name": "5 mL Polypropylene Round-Bottom Tube 12 x 75 mm style",
+      "price": "$25.00",
+      "product_code": "1757541611-8daecd1e",
+      "description": ""
+    },
+    {
+      "name": "5 mL Polystyrene Round-Bottom Tube 12 x 75 mm",
+      "price": "$171.12",
+      "product_code": "1757541234-870e1b59",
+      "description": ""
+    },
+    {
+      "name": "50ul Filter Conductive Pipette Tips",
+      "price": "$26.00",
+      "product_code": "1757618474-3c94c808",
+      "description": ""
+    },
+    {
+      "name": "550µl EZ Load Pipette Tips Sterile",
+      "price": "$39.00",
+      "product_code": "1758651761-7cbb16ba",
+      "description": ""
+    }
+  ]
+}

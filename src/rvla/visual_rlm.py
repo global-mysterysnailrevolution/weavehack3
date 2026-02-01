@@ -15,7 +15,7 @@ import weave
 from rvla.weave_init import ensure_weave_init
 ensure_weave_init()
 
-from openai import OpenAI
+from rvla.openai_client import get_openai_client
 
 
 @dataclass
@@ -68,7 +68,7 @@ def examine_visual_snippet(
     This is the RLM pattern for vision: examine visual context in chunks
     rather than loading entire screenshots.
     """
-    client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+    client = get_openai_client()
     
     prompt = f"""Examine this visual snippet in the context of the goal: {goal}
 

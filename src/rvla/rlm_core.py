@@ -19,7 +19,7 @@ import weave
 from rvla.weave_init import ensure_weave_init
 ensure_weave_init()
 
-from openai import OpenAI
+from rvla.openai_client import get_openai_client
 
 
 @dataclass
@@ -52,7 +52,7 @@ def examine_context_snippet(
     This is the core RLM operation: treating context as external environment
     and examining it programmatically rather than loading it all into context.
     """
-    client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+    client = get_openai_client()
     
     prompt = f"""You are examining a snippet of context from a long-running agent task.
 
@@ -114,7 +114,7 @@ def decompose_task(
     The agent recursively calls itself, treating the task as part of
     an external environment that can be examined and decomposed.
     """
-    client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+    client = get_openai_client()
     
     prompt = f"""You are a recursive language model agent. Decompose this task into subtasks.
 

@@ -93,6 +93,23 @@ User: "Research SaaS pricing, save to file, email me summary"
    - Manages retries
 ```
 
+## Starting the RLM-VLA MCP Server
+
+**You need to run your own MCP server to expose your agent's capabilities:**
+
+```bash
+# Start the MCP server (runs on port 8001 by default)
+python scripts/start_mcp_server.py
+
+# Or set custom port
+MCP_SERVER_PORT=8001 python scripts/start_mcp_server.py
+```
+
+The server will be available at:
+- **MCP Endpoint**: `http://localhost:8001`
+- **Tools List**: `http://localhost:8001/tools`
+- **Call Endpoint**: `http://localhost:8001/tools/call`
+
 ## MCP Tools We Expose
 
 Our RLM-VLA agent exposes these MCP tools for other agents to use:
@@ -100,6 +117,12 @@ Our RLM-VLA agent exposes these MCP tools for other agents to use:
 - `navigate_web(url, goal)` - Navigate and extract
 - `extract_data(url, data_type)` - Extract structured data  
 - `multi_page_navigation(task, pages)` - Complex navigation
+
+**To use from OpenClaw:**
+
+1. Start your MCP server: `python scripts/start_mcp_server.py`
+2. Configure OpenClaw to use your MCP server URL: `http://localhost:8001`
+3. OpenClaw can now call your agent's tools via MCP
 
 ## OpenClaw Skills
 

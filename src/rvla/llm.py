@@ -10,7 +10,7 @@ import weave
 from rvla.weave_init import ensure_weave_init
 ensure_weave_init()
 
-from openai import OpenAI
+from rvla.openai_client import get_openai_client
 
 
 @weave.op()
@@ -22,7 +22,7 @@ def plan_next_action(
     screenshot_base64: str | None = None,
 ) -> dict[str, Any]:
     """Use GPT-4o to plan the next action based on goal, observation, history, and screenshot."""
-    client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+    client = get_openai_client()
 
     # Use adaptive context window based on depth and history length
     # For deeper recursion or longer history, use more context
@@ -125,7 +125,7 @@ def analyze_observation(
     url: str | None = None,
 ) -> dict[str, Any]:
     """Use GPT-4o vision to analyze a screenshot and extract relevant information."""
-    client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+    client = get_openai_client()
 
     if not screenshot_base64:
         return {"analysis": "No screenshot available", "relevant_elements": [], "suggested_actions": []}
