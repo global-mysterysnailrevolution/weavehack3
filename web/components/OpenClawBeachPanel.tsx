@@ -167,7 +167,12 @@ export default function OpenClawBeachPanel({
               ],
             }));
           } catch (err) {
-            setLogs((prev) => [...prev, `Parse error: ${String(err)}`]);
+            setLogs((prev) => [...prev, {
+              timestamp: new Date().toISOString(),
+              type: 'error',
+              message: `Parse error: ${String(err)}`,
+              data: { error: String(err) },
+            }]);
           }
         }
       }
