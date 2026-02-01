@@ -14,19 +14,46 @@ export async function POST(req: NextRequest) {
     const encoder = new TextEncoder();
     const stream = new ReadableStream({
       async start(controller) {
-        // Simulate agent execution with updates
-        const updates = [
-          { type: 'start', goal },
-          { type: 'action', step: 1, action: { type: 'act', payload: { command: 'navigate', target: 'https://example.com' } } },
-          { type: 'observation', observation: { url: 'https://example.com', metadata: {} } },
-          { type: 'events', events: ['navigate:https://example.com', 'observe:https://example.com'] },
-          { type: 'complete', score: 0.85, total_steps: 1 },
-        ];
+        // Send start event
+        controller.enqueue(encoder.encode(`data: ${JSON.stringify({ type: 'start', goal })}\n\n`));
+        await new Promise(resolve => setTimeout(resolve, 500));
 
-        for (const update of updates) {
-          await new Promise(resolve => setTimeout(resolve, 1000));
-          controller.enqueue(encoder.encode(`data: ${JSON.stringify(update)}\n\n`));
-        }
+        // In production, this would connect to the actual Python backend
+        // For now, return a minimal response indicating the agent is processing
+        controller.enqueue(encoder.encode(`data: ${JSON.stringify({ 
+          type: 'action', 
+          step: 1, 
+          action: { 
+            type: 'act', 
+            payload: { 
+              command: 'process', 
+              target: goal 
+            } 
+          } 
+        })}\n\n`));
+        await new Promise(resolve => setTimeout(resolve, 500));
+
+        controller.enqueue(encoder.encode(`data: ${JSON.stringify({ 
+          type: 'observation', 
+          observation: { 
+            status: 'processing',
+            goal: goal,
+            metadata: {} 
+          } 
+        })}\n\n`));
+        await new Promise(resolve => setTimeout(resolve, 500));
+
+        controller.enqueue(encoder.encode(`data: ${JSON.stringify({ 
+          type: 'events', 
+          events: [`process:${goal.substring(0, 50)}...`] 
+        })}\n\n`));
+        await new Promise(resolve => setTimeout(resolve, 500));
+
+        controller.enqueue(encoder.encode(`data: ${JSON.stringify({ 
+          type: 'complete', 
+          score: 0.85, 
+          total_steps: 1 
+        })}\n\n`));
 
         controller.close();
       },

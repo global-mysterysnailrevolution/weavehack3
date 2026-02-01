@@ -1,13 +1,14 @@
 'use client';
 
 import { AgentExecution } from '@/types';
-import { CheckCircle, XCircle, Loader2, Circle } from 'lucide-react';
+import { CheckCircle, XCircle, Loader2, Circle, ChefHat } from 'lucide-react';
 
 interface StatusPanelProps {
   execution: AgentExecution | null;
+  onCookLonger?: () => void;
 }
 
-export default function StatusPanel({ execution }: StatusPanelProps) {
+export default function StatusPanel({ execution, onCookLonger }: StatusPanelProps) {
   const getStatusIcon = () => {
     if (!execution) return <Circle className="text-slate-400" size={24} />;
     
@@ -65,6 +66,16 @@ export default function StatusPanel({ execution }: StatusPanelProps) {
               <div className="mt-4 p-3 bg-red-900/30 border border-red-700 rounded-lg">
                 <p className="text-red-400 text-sm">{execution.error}</p>
               </div>
+            )}
+
+            {execution.status === 'completed' && onCookLonger && (
+              <button
+                onClick={onCookLonger}
+                className="mt-4 w-full px-4 py-3 bg-orange-600 hover:bg-orange-700 text-white rounded-lg transition-colors flex items-center justify-center gap-2 font-medium"
+              >
+                <ChefHat size={20} />
+                Cook Longer
+              </button>
             )}
           </>
         )}

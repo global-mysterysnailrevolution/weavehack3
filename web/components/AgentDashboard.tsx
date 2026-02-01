@@ -26,6 +26,23 @@ export default function AgentDashboard({
   const [isRunning, setIsRunning] = useState(false);
   const marimoUrl = process.env.NEXT_PUBLIC_MARIMO_URL;
 
+  const handleCookLonger = async () => {
+    if (!execution?.goal) return;
+    
+    // Reset execution state but keep the goal
+    const newExecution: AgentExecution = {
+      id: `exec_${Date.now()}`,
+      goal: execution.goal,
+      status: 'running',
+      current_step: 0,
+      trajectory: execution.trajectory || [], // Keep previous trajectory
+      events: execution.events || [], // Keep previous events
+    };
+    
+    onUpdateExecution(newExecution);
+    await handleStartExecution(execution.goal);
+  };
+
   const handleStartExecution = async (goal: string) => {
     setIsRunning(true);
     const execId = `exec_${Date.now()}`;
@@ -164,7 +181,10 @@ export default function AgentDashboard({
           onUpdateExecution={onUpdateExecution}
         />
         
-        <StatusPanel execution={execution} />
+        <StatusPanel 
+          execution={execution} 
+          onCookLonger={execution?.status === 'completed' ? handleCookLonger : undefined}
+        />
       </div>
 
       {/* Middle Column: Execution & Observations */}
