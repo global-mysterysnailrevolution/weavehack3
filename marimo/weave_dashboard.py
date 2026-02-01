@@ -172,7 +172,66 @@ def _(recent_calls: Any) -> None:
         # Analyze calls for patterns
         total = len(list(recent_calls)) if not hasattr(recent_calls, "__len__") else len(recent_calls)
         
-        if total > 0:
+        # Look for iterative improvement patterns
+        iteration_calls = []
+        for call in recent_calls:
+            op_name = str(getattr(call, "op_name", ""))
+            if "run_pricing_iteration" in op_name.lower() or "iteration" in op_name.lower():
+                try:
+                    if hasattr(call, "output"):
+                        output = call.output
+                    elif hasattr(call, "result"):
+                        output = call.result
+                    else:
+                        continue
+                    
+                    if isinstance(output, dict) and "iteration" in output:
+                        iteration_calls.append({
+                            "iteration": output.get("iteration", 0),
+                            "success": output.get("success", False),
+                            "steps": output.get("steps", 0),
+                            "events": output.get("events", 0),
+                        })
+                except:
+                    pass
+        
+        if iteration_calls:
+            # Sort by iteration
+            iteration_calls.sort(key=lambda x: x.get("iteration", 0))
+            
+            mo.md(
+                f"""
+                ## 📈 Iterative Improvement Tracking
+                
+                Found {len(iteration_calls)} iterations of pricing task:
+                """
+            )
+            
+            # Show improvement trend
+            if len(iteration_calls) > 1:
+                first = iteration_calls[0]
+                last = iteration_calls[-1]
+                
+                improvements = []
+                if last["steps"] > first["steps"]:
+                    improvements.append(f"✅ More steps ({first['steps']} → {last['steps']}) - more thorough")
+                if last["success"] and not first["success"]:
+                    improvements.append("✅ Success improved (failed → succeeded)")
+                if last["events"] > first["events"]:
+                    improvements.append(f"✅ More events ({first['events']} → {last['events']}) - better logging")
+                
+                if improvements:
+                    mo.md("**Improvements detected:**")
+                    for imp in improvements:
+                        mo.md(f"- {imp}")
+                else:
+                    mo.md("**No clear improvement yet** - may need more iterations")
+            
+            # Show iteration table
+            import pandas as pd
+            iter_df = pd.DataFrame(iteration_calls)
+            mo.table(iter_df)
+        elif total > 0:
             mo.md(
                 f"""
                 ## 💡 Improvement Suggestions
@@ -182,9 +241,9 @@ def _(recent_calls: Any) -> None:
                 1. **Monitor execution patterns** - Review action sequences for optimization opportunities
                 2. **Track success rates** - Identify which goals and actions lead to better outcomes  
                 3. **Analyze context usage** - Optimize RLM context examination for efficiency
-                4. **Compare runs** - Use "Cook Longer" to iterate and improve agent performance
+                4. **Compare runs** - Use iterative runs to improve agent performance
                 
-                *Suggestions update automatically as you run more agent executions.*
+                *Run `scripts/showcase_weave_improvement.py` to see iterative improvement in action.*
                 """
             )
         else:
