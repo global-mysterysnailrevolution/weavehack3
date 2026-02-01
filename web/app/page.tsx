@@ -20,43 +20,33 @@ export default function Home() {
         const response = await fetch('/api/dev/seed-credentials');
         if (response.ok) {
           const envCreds = await response.json();
-          // Check if we have the minimum required credentials
-          if (envCreds.openai_api_key && envCreds.wandb_api_key && envCreds.wandb_project) {
-            console.log('✅ Using credentials from environment variables');
-            setCredentials(envCreds as Credentials);
-            // Don't save to localStorage - always use fresh env vars
-            setShowCredentialsModal(false);
-            return;
-          } else {
-            console.warn('⚠️ Environment variables incomplete:', {
-              hasOpenAI: !!envCreds.openai_api_key,
-              hasWandb: !!envCreds.wandb_api_key,
-              hasProject: !!envCreds.wandb_project
-            });
-          }
+          // Use whatever we get from env vars - even if incomplete
+          console.log('✅ Using credentials from environment variables');
+          setCredentials(envCreds as Credentials);
+          // Don't save to localStorage - always use fresh env vars
+          setShowCredentialsModal(false);
+          return;
         }
       } catch (e) {
         console.error('Failed to fetch environment credentials:', e);
       }
 
-      // Fallback to localStorage only if env vars are not available
+      // Fallback to localStorage silently (no modal)
       const saved = localStorage.getItem('rvla_credentials');
       if (saved) {
         try {
           const creds = JSON.parse(saved);
-          if (creds.openai_api_key && creds.wandb_api_key && creds.wandb_project) {
-            console.log('Using credentials from localStorage (fallback)');
-            setCredentials(creds);
-            setShowCredentialsModal(false);
-            return;
-          }
+          console.log('Using credentials from localStorage (fallback)');
+          setCredentials(creds);
+          setShowCredentialsModal(false);
+          return;
         } catch (e) {
           console.error('Failed to load credentials from localStorage:', e);
         }
       }
       
-      // Only show modal if we don't have credentials from env vars or localStorage
-      setShowCredentialsModal(true);
+      // Never show modal automatically - just use whatever we have (or empty)
+      setShowCredentialsModal(false);
     };
 
     loadCredentialsFromEnv();
@@ -157,7 +147,10 @@ export default function Home() {
           />
         ) : (
           <div className="text-center text-white py-20">
-            <p className="text-xl mb-4 drop-shadow-lg">Please configure your API credentials to begin.</p>
+            <p className="text-xl mb-4 drop-shadow-lg">Loading credentials from environment variables...</p>
+            <p className="text-sm text-slate-400 mb-4">
+              If credentials are missing, set them in your Vercel environment variables or use the "Override Credentials" button.
+            </p>
           </div>
         )}
       </div>
