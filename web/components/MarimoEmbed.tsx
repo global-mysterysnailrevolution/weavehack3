@@ -3,7 +3,8 @@ interface MarimoEmbedProps {
 }
 
 export default function MarimoEmbed({ src }: MarimoEmbedProps) {
-  if (!src) {
+  const iframeSrc = src || '/api/marimo?embed=true&mode=read';
+  if (!iframeSrc) {
     return (
       <div className="rounded-lg border border-slate-700 bg-slate-900/40 p-4 text-slate-300">
         <p className="text-sm">
@@ -17,7 +18,7 @@ export default function MarimoEmbed({ src }: MarimoEmbedProps) {
   return (
     <div className="rounded-lg border border-slate-700 bg-slate-950/50">
       <iframe
-        src={src}
+        src={iframeSrc}
         title="Marimo Weave Dashboard"
         width="100%"
         height="600"
