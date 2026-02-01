@@ -11,6 +11,7 @@ from fastapi.responses import StreamingResponse
 
 import weave
 from rvla.weave_init import ensure_weave_init
+from rvla.prompt_database import get_prompt_database, LearnedPrompt
 
 ensure_weave_init()
 from pydantic import BaseModel
@@ -46,6 +47,64 @@ async def root():
 @app.get("/health")
 async def health():
     return {"status": "healthy"}
+
+
+@app.get("/api/prompts")
+async def list_prompts(
+    task_type: Optional[str] = None,
+    limit: int = 10,
+):
+    """List stored learned prompts, optionally filtered by task type."""
+    try:
+        prompt_db = get_prompt_database()
+        
+        if task_type:
+            # Get prompts by task type
+            pattern = prompt_db._key("*")
+            keys = prompt_db._get_all_keys(pattern)
+            prompts = []
+            for key in keys:
+                prompt_id = key.replace("prompt:db:", "")
+                prompt = prompt_db.get_prompt(prompt_id)
+                if prompt and prompt.task_type == task_type:
+                    prompts.append({
+                        "prompt_id": prompt.prompt_id,
+                        "task_type": prompt.task_type,
+                        "task_context": prompt.task_context[:200],
+                        "success_rate": prompt.success_rate,
+                        "usage_count": prompt.usage_count,
+                        "created_at": prompt.created_at,
+                        "problem_patterns": [
+                            {
+                                "problem_type": pp.problem_type,
+                                "frequency": pp.frequency,
+                            }
+                            for pp in prompt.problem_patterns
+                        ],
+                    })
+            prompts.sort(key=lambda x: x["success_rate"], reverse=True)
+            return {"prompts": prompts[:limit], "count": len(prompts)}
+        else:
+            # Get all prompts
+            pattern = prompt_db._key("*")
+            keys = prompt_db._get_all_keys(pattern)
+            prompts = []
+            for key in keys[:limit * 2]:  # Get more to filter
+                prompt_id = key.replace("prompt:db:", "")
+                prompt = prompt_db.get_prompt(prompt_id)
+                if prompt:
+                    prompts.append({
+                        "prompt_id": prompt.prompt_id,
+                        "task_type": prompt.task_type,
+                        "task_context": prompt.task_context[:200],
+                        "success_rate": prompt.success_rate,
+                        "usage_count": prompt.usage_count,
+                        "created_at": prompt.created_at,
+                    })
+            prompts.sort(key=lambda x: x["success_rate"], reverse=True)
+            return {"prompts": prompts[:limit], "count": len(prompts)}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to list prompts: {str(e)}")
 
 
 @app.post("/api/agent/run")
@@ -269,76 +328,97 @@ def _stream_openclaw(
     goal: str,
     iteration: int,
 ) -> Iterable[str]:
-    env = os.environ.copy()
-    env["OPENCLAW_SANDBOX"] = "1" if mode == "beach" else "0"
-
-    base_cmd = os.getenv(
-        "OPENCLAW_BEACH_CMD" if mode == "beach" else "OPENCLAW_SEA_CMD",
-        "openclaw agent --message",
-    )
-    cmd = _build_openclaw_cmd(base_cmd, goal)
-
+    """Run the RLM-VLA agent (not OpenClaw - that doesn't exist).
+    
+    This uses the actual RLM-VLA agent from src/rvla/agent.py.
+    'beach' mode = sandboxed/test mode (same as regular, just labeled differently)
+    'sea' mode = production mode (same as regular)
+    """
+    from rvla.agent import run_agent
+    from rvla.memory import workspace_from_env
+    from rvla.web import WebDriver
+    
     yield f"data: {json.dumps({'type': 'openclaw_start', 'mode': mode, 'goal': goal, 'iteration': iteration})}\n\n"
-
-    try:
-        process = subprocess.Popen(
-            cmd,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT,
-            env=env,
-            cwd=os.path.dirname(os.path.dirname(__file__)),
-            text=True,
-            bufsize=1,
-            shell=True,
-            encoding="utf-8",
-            errors="replace",
-        )
-    except Exception as exc:
-        yield f"data: {json.dumps({'type': 'error', 'error': str(exc)})}\n\n"
-        return
-
+    
     output_lines: list[str] = []
     events: list[dict] = []
-    line_count = 0
+    exit_code = 0
+    driver = None
     
-    if process.stdout:
-        for line in process.stdout:
-            line = line.strip()
-            if not line:
-                continue
+    try:
+        # Initialize components
+        workspace = workspace_from_env()
+        driver = WebDriver()
+        
+        yield f"data: {json.dumps({'type': 'openclaw_log', 'mode': mode, 'message': f'[RLM-VLA Agent] Starting task: {goal[:100]}...'})}\n\n"
+        output_lines.append(f"Starting RLM-VLA agent task: {goal}")
+        
+        # Run agent
+        result = run_agent(
+            goal=goal,
+            driver=driver,
+            workspace=workspace,
+            enable_multi_agent=True,
+        )
+        
+        # Stream trajectory as events
+        trajectory = result.get('trajectory', [])
+        for i, action in enumerate(trajectory):
+            event_data = {
+                "type": "openclaw_event",
+                "mode": mode,
+                "payload": {
+                    "step": i + 1,
+                    "action_type": action.type,
+                    "action_payload": action.payload,
+                },
+                "line_number": i + 1,
+            }
+            events.append(event_data["payload"])
+            if len(events) > OPENCLAW_EVENT_LIMIT:
+                events.pop(0)
             
-            line_count += 1
-            output_lines.append(line)
-            
-            # Stream every line immediately
+            action_desc = action.payload.get('command', action.payload.get('reasoning', action.payload.get('task', '')))
+            log_msg = f"[Step {i+1}] {action.type}: {str(action_desc)[:100]}"
+            output_lines.append(log_msg)
+            yield f"data: {json.dumps(event_data)}\n\n"
+            yield f"data: {json.dumps({'type': 'openclaw_log', 'mode': mode, 'message': log_msg})}\n\n"
+        
+        # Add final events
+        for event in result.get('events', []):
+            output_lines.append(f"Event: {event}")
+            events.append({"event": event})
+        
+        # Calculate score from result
+        score_result = result.get('score', {})
+        if isinstance(score_result, dict):
+            success = score_result.get('success', False)
+            steps = score_result.get('steps', len(trajectory))
+        else:
+            success = bool(score_result) if score_result else False
+            steps = len(trajectory)
+        
+        output_lines.append(f"Task completed. Success: {success}, Steps: {steps}")
+        
+    except Exception as exc:
+        exit_code = 1
+        error_msg = f"Error running agent: {str(exc)}"
+        output_lines.append(error_msg)
+        yield f"data: {json.dumps({'type': 'error', 'error': error_msg})}\n\n"
+        import traceback
+        output_lines.append(traceback.format_exc())
+    finally:
+        if driver:
             try:
-                parsed = json.loads(line)
-                events.append(parsed)
-                if len(events) > OPENCLAW_EVENT_LIMIT:
-                    events.pop(0)
-                payload = {
-                    "type": "openclaw_event",
-                    "mode": mode,
-                    "payload": parsed,
-                    "line_number": line_count,
-                }
-            except Exception:
-                # Not JSON - treat as log message
-                payload = {
-                    "type": "openclaw_log",
-                    "mode": mode,
-                    "message": line,
-                    "line_number": line_count,
-                }
-            
-            # Always yield the log/event immediately
-            yield f"data: {json.dumps(payload)}\n\n"
-
-    process.wait()
-    exit_code = process.returncode
-
+                driver.close()
+            except:
+                pass
+    
+    # Analyze output and record
     tail = output_lines[-50:]
     analysis = _analyze_openclaw_output(output_lines)
+    
+    # Record to Weave
     record_openclaw_run(
         mode=mode,
         goal=goal,
@@ -348,6 +428,51 @@ def _stream_openclaw(
         events=events,
         analysis=analysis,
     )
+    
+    # Store learned prompt in Redis database if this was a successful improvement
+    if mode == "beach" and iteration > 0 and analysis.get("score", 0) > 0.7:
+        try:
+            prompt_db = get_prompt_database()
+            # Extract original goal (before suggestions were added)
+            original_goal = goal.split("\n\nPrevious beach notes:")[0].strip()
+            if "\n\nLEARNED PROMPT TOOL" in original_goal:
+                original_goal = original_goal.split("\n\nLEARNED PROMPT TOOL")[0].strip()
+            
+            # Create improved prompt (goal with suggestions incorporated)
+            improved_prompt = goal
+            
+            # Determine task type from goal
+            task_type = "pricing_extraction" if "shopbiolinkdepot" in goal.lower() or "pricing" in goal.lower() else "general"
+            
+            # Prepare trace data for pattern extraction
+            trace_data = {
+                "events": events,
+                "output_tail": tail,
+                "analysis": analysis,
+                "goal": original_goal,
+            }
+            
+            # Create and store learned prompt
+            learned_prompt = prompt_db.create_learned_prompt(
+                original_prompt=original_goal,
+                improved_prompt=improved_prompt,
+                analysis=analysis,
+                goal=original_goal,
+                task_type=task_type,
+                metadata={
+                    "mode": mode,
+                    "iteration": iteration,
+                    "exit_code": exit_code,
+                    "suggestions": analysis.get("suggestions", []),
+                },
+                trace_data=trace_data,
+            )
+            prompt_db.store_prompt(learned_prompt)
+            yield f"data: {json.dumps({'type': 'prompt_stored', 'prompt_id': learned_prompt.prompt_id, 'task_type': task_type})}\n\n"
+        except Exception as e:
+            # Don't fail the whole request if prompt storage fails
+            print(f"[WARN] Failed to store learned prompt: {e}")
+    
     _save_beach_state(
         {
             "last_mode": mode,
@@ -388,6 +513,21 @@ def record_openclaw_run(
 async def openclaw_beach(request: OpenClawRequest):
     state = _load_beach_state()
     goal = request.goal
+    
+    # Try to retrieve relevant learned prompts from Redis database
+    try:
+        prompt_db = get_prompt_database()
+        task_type = "pricing_extraction" if "shopbiolinkdepot" in goal.lower() or "pricing" in goal.lower() else "general"
+        learned_prompt_tool = prompt_db.get_prompt_tool_for_openclaw(
+            task_context=goal,
+            task_type=task_type,
+        )
+        if learned_prompt_tool:
+            goal = f"{goal}\n\n{learned_prompt_tool}"
+    except Exception as e:
+        print(f"[WARN] Failed to retrieve learned prompts: {e}")
+    
+    # Add previous iteration feedback if available
     if request.iteration > 0 and state.get("last_output_tail"):
         tail = "\n".join(state.get("last_output_tail", []))
         suggestion_lines = []
@@ -412,8 +552,23 @@ async def openclaw_beach(request: OpenClawRequest):
 
 @app.post("/api/openclaw/sea")
 async def openclaw_sea(request: OpenClawRequest):
+    goal = request.goal
+    
+    # Try to retrieve relevant learned prompts from Redis database
+    try:
+        prompt_db = get_prompt_database()
+        task_type = "pricing_extraction" if "shopbiolinkdepot" in goal.lower() or "pricing" in goal.lower() else "general"
+        learned_prompt_tool = prompt_db.get_prompt_tool_for_openclaw(
+            task_context=goal,
+            task_type=task_type,
+        )
+        if learned_prompt_tool:
+            goal = f"{goal}\n\n{learned_prompt_tool}"
+    except Exception as e:
+        print(f"[WARN] Failed to retrieve learned prompts: {e}")
+    
     return StreamingResponse(
-        _stream_openclaw("sea", request.goal, request.iteration),
+        _stream_openclaw("sea", goal, request.iteration),
         media_type="text/event-stream",
         headers={
             "Cache-Control": "no-cache",
