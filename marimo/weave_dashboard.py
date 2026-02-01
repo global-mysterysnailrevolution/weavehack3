@@ -217,14 +217,173 @@ def _(recent_calls: Any, limit: int) -> Any:
 
 
 @app.cell
-def _(openclaw_runs: Any) -> None:
-    """Display OpenClaw run data if available."""
-    if openclaw_runs is not None and len(openclaw_runs) > 0:
-        mo.md("## 🦀 OpenClaw Runs")
-        if hasattr(openclaw_runs, "head"):
-            mo.table(openclaw_runs.head(10))
-        else:
-            mo.md(f"Found {len(openclaw_runs)} OpenClaw runs.")
+def _(recent_calls: Any) -> Any:
+    """Extract OpenClaw run details with full analysis."""
+    openclaw_details = []
+    try:
+        items = list(recent_calls) if not hasattr(recent_calls, "__iter__") else recent_calls
+        for call in items:
+            op_name = str(getattr(call, "op_name", ""))
+            if "record_openclaw_run" in op_name.lower():
+                try:
+                    # Try multiple ways to access the output
+                    output = None
+                    if hasattr(call, "output"):
+                        output = call.output
+                    elif hasattr(call, "result"):
+                        output = call.result
+                    elif hasattr(call, "return_value"):
+                        output = call.return_value
+                    elif hasattr(call, "get_output"):
+                        output = call.get_output()
+                    else:
+                        # Try accessing as dict/object
+                        try:
+                            if isinstance(call, dict):
+                                output = call.get("output") or call.get("result")
+                            else:
+                                # Try to get the call ID and fetch full call
+                                call_id = getattr(call, "id", None) or getattr(call, "_id", None)
+                                if call_id:
+                                    try:
+                                        full_call = weave.get_call(call_id)
+                                        if full_call:
+                                            output = getattr(full_call, "output", None) or getattr(full_call, "result", None)
+                                    except:
+                                        pass
+                        except:
+                            pass
+                    
+                    if output is None:
+                        # If we can't get output, still record basic info
+                        openclaw_details.append({
+                            "mode": "unknown",
+                            "goal": "Unable to extract",
+                            "iteration": 0,
+                            "exit_code": None,
+                            "analysis": {},
+                            "timestamp": getattr(call, "started_at", None),
+                            "raw_call": str(call)[:200],
+                        })
+                        continue
+                    
+                    if isinstance(output, dict):
+                        openclaw_details.append({
+                            "mode": output.get("mode", "unknown"),
+                            "goal": output.get("goal", "")[:100],  # Truncate long goals
+                            "iteration": output.get("iteration", 0),
+                            "exit_code": output.get("exit_code"),
+                            "analysis": output.get("analysis", {}),
+                            "timestamp": getattr(call, "started_at", None),
+                        })
+                except Exception as e:
+                    # Still record that we found a call, even if we can't extract details
+                    openclaw_details.append({
+                        "mode": "error",
+                        "goal": f"Error extracting: {str(e)[:50]}",
+                        "iteration": 0,
+                        "exit_code": None,
+                        "analysis": {},
+                        "timestamp": getattr(call, "started_at", None),
+                    })
+    except Exception as e:
+        pass
+    
+    # Sort by iteration and timestamp (most recent first)
+    openclaw_details.sort(key=lambda x: (x.get("iteration", 0), x.get("timestamp") or ""), reverse=True)
+    return openclaw_details
+
+
+@app.cell
+def _(openclaw_details: Any) -> None:
+    """Display OpenClaw runs with scores and analysis."""
+    if not openclaw_details:
+        mo.md("**No OpenClaw runs found yet.** Use the Beach panel to run OpenClaw tasks.")
+        return
+    
+    mo.md("## 🦀 OpenClaw Runs & Analysis")
+    
+    # Group by goal to show iteration progression
+    goals_map = {}
+    for detail in openclaw_details:
+        goal_key = detail.get("goal", "unknown")[:50]
+        if goal_key not in goals_map:
+            goals_map[goal_key] = []
+        goals_map[goal_key].append(detail)
+    
+    for goal_key, runs in list(goals_map.items())[:5]:  # Show top 5 goals
+        mo.md(f"### Goal: `{goal_key}...`")
+        
+        runs_data = []
+        for run in runs:
+            analysis = run.get("analysis", {})
+            score = analysis.get("score", "N/A")
+            suggestions = analysis.get("suggestions", [])
+            
+            runs_data.append({
+                "Iteration": run.get("iteration", 0),
+                "Mode": run.get("mode", "unknown"),
+                "Score": f"{score:.2f}" if isinstance(score, (int, float)) else str(score),
+                "Exit": run.get("exit_code", "N/A"),
+                "Suggestions": len(suggestions),
+            })
+        
+        if runs_data:
+            runs_df = pd.DataFrame(runs_data)
+            mo.table(runs_df)
+            
+            # Show suggestions from the latest run
+            latest = runs[0]
+            latest_analysis = latest.get("analysis", {})
+            latest_suggestions = latest_analysis.get("suggestions", [])
+            if latest_suggestions:
+                mo.md("**Latest Prompt Suggestions:**")
+                for sug in latest_suggestions[:5]:
+                    mo.md(f"- {sug}")
+        
+        mo.md("---")
+
+
+@app.cell
+def _(openclaw_details: Any) -> None:
+    """Show prompt evolution across iterations."""
+    if not openclaw_details:
+        return
+    
+    # Group by goal and show how prompts improve
+    goals_map = {}
+    for detail in openclaw_details:
+        goal_key = detail.get("goal", "unknown")[:50]
+        if goal_key not in goals_map:
+            goals_map[goal_key] = []
+        goals_map[goal_key].append(detail)
+    
+    for goal_key, runs in list(goals_map.items())[:3]:  # Show top 3 goals
+        if len(runs) < 2:
+            continue  # Need at least 2 iterations to show evolution
+        
+        # Sort by iteration
+        runs.sort(key=lambda x: x.get("iteration", 0))
+        
+        mo.md(f"### 📈 Prompt Evolution: `{goal_key}...`")
+        
+        for i, run in enumerate(runs):
+            iteration = run.get("iteration", 0)
+            analysis = run.get("analysis", {})
+            score = analysis.get("score", "N/A")
+            suggestions = analysis.get("suggestions", [])
+            
+            mo.md(f"**Iteration {iteration}** (Score: {score:.2f if isinstance(score, (int, float)) else score})")
+            
+            if suggestions:
+                mo.md("**Applied Suggestions:**")
+                for sug in suggestions[:3]:
+                    mo.md(f"  ✓ {sug}")
+            
+            if i < len(runs) - 1:
+                mo.md("↓ *Next iteration incorporates feedback* ↓")
+        
+        mo.md("---")
 
 
 if __name__ == "__main__":

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { TrendingUp, RefreshCw, ExternalLink } from 'lucide-react';
 
 interface MarimoEmbedProps {
@@ -10,7 +10,23 @@ interface MarimoEmbedProps {
 
 export default function MarimoEmbed({ src, execution }: MarimoEmbedProps) {
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [refreshKey, setRefreshKey] = useState(0);
+  const iframeRef = useRef<HTMLIFrameElement>(null);
   const iframeSrc = src || '/api/marimo?embed=true&mode=read';
+  
+  // Auto-refresh when execution completes (especially OpenClaw runs)
+  useEffect(() => {
+    if (execution?.status === 'completed') {
+      // Small delay to allow Weave to sync
+      const timer = setTimeout(() => {
+        setRefreshKey((prev) => prev + 1);
+        if (iframeRef.current) {
+          iframeRef.current.src = iframeRef.current.src;
+        }
+      }, 2000);
+      return () => clearTimeout(timer);
+    }
+  }, [execution?.status]);
   
   const handleRefresh = () => {
     setIsRefreshing(true);
@@ -84,14 +100,21 @@ export default function MarimoEmbed({ src, execution }: MarimoEmbedProps) {
       {execution && execution.status === 'completed' && (
         <div className="mb-4 p-3 bg-primary-900/20 border border-primary-700 rounded-lg">
           <p className="text-primary-300 text-sm">
-            <strong>Latest run completed!</strong> Check the dashboard below to see how this execution 
-            compares to previous runs and identify improvement opportunities.
+            <strong>✅ Latest run completed!</strong> The dashboard below shows Weave traces, OpenClaw analysis, 
+            and prompt improvement suggestions. It auto-refreshes when runs complete.
           </p>
+          {execution.events && execution.events.some((e: string) => e.includes('openclaw') || e.includes('OpenClaw')) && (
+            <p className="text-primary-200 text-xs mt-2">
+              🦀 OpenClaw run detected - check the dashboard for scores, suggestions, and prompt evolution.
+            </p>
+          )}
         </div>
       )}
 
       <div className="rounded-lg border border-slate-700 bg-slate-950/50 overflow-hidden">
         <iframe
+          ref={iframeRef}
+          key={refreshKey}
           src={iframeSrc}
           title="Marimo Weave Dashboard"
           width="100%"
