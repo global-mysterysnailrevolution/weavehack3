@@ -20,14 +20,25 @@ export default function Home() {
         const response = await fetch('/api/dev/seed-credentials');
         if (response.ok) {
           const envCreds = await response.json();
+          // Check if we have the minimum required credentials
           if (envCreds.openai_api_key && envCreds.wandb_api_key && envCreds.wandb_project) {
+            console.log('Loaded credentials from environment variables');
             setCredentials(envCreds as Credentials);
             localStorage.setItem('rvla_credentials', JSON.stringify(envCreds));
+            setShowCredentialsModal(false);
             return;
+          } else {
+            console.log('Environment variables found but incomplete:', {
+              hasOpenAI: !!envCreds.openai_api_key,
+              hasWandb: !!envCreds.wandb_api_key,
+              hasProject: !!envCreds.wandb_project
+            });
           }
+        } else {
+          console.log('API route returned error:', response.status);
         }
       } catch (e) {
-        console.log('Environment credentials not available, checking localStorage');
+        console.log('Failed to fetch environment credentials:', e);
       }
 
       // Fallback to localStorage if env vars not available
@@ -35,14 +46,18 @@ export default function Home() {
       if (saved) {
         try {
           const creds = JSON.parse(saved);
-          setCredentials(creds);
+          if (creds.openai_api_key && creds.wandb_api_key && creds.wandb_project) {
+            setCredentials(creds);
+            setShowCredentialsModal(false);
+            return;
+          }
         } catch (e) {
-          console.error('Failed to load credentials:', e);
-          setShowCredentialsModal(true);
+          console.error('Failed to load credentials from localStorage:', e);
         }
-      } else {
-        setShowCredentialsModal(true);
       }
+      
+      // Only show modal if we don't have credentials
+      setShowCredentialsModal(true);
     };
 
     loadCredentialsFromEnv();
