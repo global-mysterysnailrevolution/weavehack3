@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Credentials, AgentExecution } from '@/types';
 import GoalInput from './GoalInput';
+import OpenClawBeachPanel from './OpenClawBeachPanel';
 import ExecutionLog from './ExecutionLog';
 import ObservationViewer from './ObservationViewer';
 import ActionHistory from './ActionHistory';
@@ -42,7 +43,8 @@ export default function AgentDashboard({
 
       try {
       // Call backend API (works with Railway rewrites or direct backend URL)
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || '/api/agent/run';
+      const apiBase = process.env.NEXT_PUBLIC_API_BASE_URL || '';
+      const apiUrl = apiBase ? `${apiBase.replace(/\/$/, '')}/api/agent/run` : '/api/agent/run';
       const response = await fetch(apiUrl, {
         method: 'POST',
         headers: {
@@ -155,6 +157,11 @@ export default function AgentDashboard({
         <GoalInput
           onStart={handleStartExecution}
           disabled={isRunning}
+        />
+        <OpenClawBeachPanel
+          credentials={credentials}
+          execution={execution}
+          onUpdateExecution={onUpdateExecution}
         />
         
         <StatusPanel execution={execution} />
