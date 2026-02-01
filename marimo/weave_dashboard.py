@@ -1,6 +1,6 @@
 import os
 from typing import Any
-from datetime import datetime, timedelta
+from datetime import datetime
 
 import marimo as mo
 import weave
@@ -31,7 +31,7 @@ def _(project: str, entity: str | None) -> str:
 
 
 @app.cell
-def _(mo, status: str) -> None:
+def _(mo, status):
     mo.md(f"""
     # 🦞 Lobster Pot - Self-Improving Agent Dashboard
 
@@ -42,10 +42,11 @@ def _(mo, status: str) -> None:
     The agent learns from Weave traces, identifies issues, generates suggestions, and improves with each iteration.
     Watch the metrics below to see improvement in real-time!
     """)
+    return
 
 
 @app.cell
-def _(weave, limit: int) -> Any:
+def _(weave, limit):
     """Get recent calls for analysis."""
     try:
         calls = weave.get_op_runs(limit=limit)
@@ -53,41 +54,41 @@ def _(weave, limit: int) -> Any:
             recent_calls = calls.head(limit)
         else:
             recent_calls = list(calls)[:limit] if hasattr(calls, "__iter__") else []
-        return recent_calls
+        return (recent_calls,)
     except Exception as exc:
-        return {"error": f"Unable to get calls: {exc}"}
+        return ({"error": f"Unable to get calls: {exc}"},)
 
 
 @app.cell
-def _(recent_calls: Any, pd) -> Any:
+def _(recent_calls, pd):
     """Convert calls to DataFrame for analysis."""
     try:
         if isinstance(recent_calls, dict) and "error" in recent_calls:
-            return recent_calls
+            return (recent_calls,)
         
         if hasattr(recent_calls, "to_pandas"):
             df = recent_calls.to_pandas()
         else:
             # Try to convert manually
             data = []
-            for call in recent_calls:
+            for _df_call in recent_calls:
                 try:
                     data.append({
-                        "op_name": getattr(call, "op_name", "unknown"),
-                        "timestamp": getattr(call, "started_at", None),
-                        "duration": getattr(call, "duration", None),
-                        "status": getattr(call, "status", "unknown"),
+                        "op_name": getattr(_df_call, "op_name", "unknown"),
+                        "timestamp": getattr(_df_call, "started_at", None),
+                        "duration": getattr(_df_call, "duration", None),
+                        "status": getattr(_df_call, "status", "unknown"),
                     })
                 except:
                     pass
             df = pd.DataFrame(data) if data else pd.DataFrame()
-        return df
+        return (df,)
     except Exception as exc:
-        return {"error": f"Unable to convert to DataFrame: {exc}"}
+        return ({"error": f"Unable to convert to DataFrame: {exc}"},)
 
 
 @app.cell
-def _(df: Any, datetime, mo) -> None:
+def _(datetime, df, mo):
     """Display agent execution summary."""
     if isinstance(df, dict) and "error" in df:
         mo.md(f"**Error:** {df['error']}")
@@ -107,55 +108,53 @@ def _(df: Any, datetime, mo) -> None:
         )
     else:
         mo.md("**No calls found.** Start running your agent to see data here.")
+    return
 
 
 @app.cell
-def _(df: Any, mo) -> None:
+def _(df, mo, pd):
     """Show agent performance trends."""
     if isinstance(df, dict) and "error" in df:
-        return
+        pass
+    else:
+        try:
+            if isinstance(df, pd.DataFrame) and "timestamp" in df.columns and "duration" in df.columns:
+                _perf_agent_df = df[df["op_name"].astype(str).str.contains("agent|run|execute", case=False, na=False)]
+                if len(_perf_agent_df) > 0:
+                    mo.md(
+                        """
+                        ## 📈 Performance Trends
 
-    try:
-        if isinstance(df, pd.DataFrame) and "timestamp" in df.columns and "duration" in df.columns:
-            agent_df = df[df["op_name"].astype(str).str.contains("agent|run|execute", case=False, na=False)]
-            if len(agent_df) > 0:
-                mo.md(
-                    """
-                    ## 📈 Performance Trends
+                        *Performance metrics will appear here as you run more agent executions.*
 
-                    *Performance metrics will appear here as you run more agent executions.*
-
-                    Track improvements in:
-                    - Execution speed
-                    - Success rates
-                    - Action efficiency
-                    - Context usage
-                    """
-                )
+                        Track improvements in:
+                        - Execution speed
+                        - Success rates
+                        - Action efficiency
+                        - Context usage
+                        """
+                    )
+                else:
+                    mo.md("**No agent executions found yet.** Run your agent to see performance data.")
             else:
-                mo.md("**No agent executions found yet.** Run your agent to see performance data.")
-        else:
-            mo.md("**Performance data:** Available after agent runs.")
-    except Exception as exc:
-        mo.md(f"**Note:** {exc}")
+                mo.md("**Performance data:** Available after agent runs.")
+        except Exception as exc:
+            mo.md(f"**Note:** {exc}")
+    return
 
 
 @app.cell
-def _(recent_calls: Any, pd, mo) -> None:
+def _(mo, pd, recent_calls):
     """Display recent agent runs."""
     try:
-        if isinstance(recent_calls, dict):
-            mo.md("**Error loading calls.**")
-            return
-            
         agent_runs = []
-        for _call in recent_calls:
-            _op_name = str(getattr(_call, "op_name", ""))
-            if any(keyword in _op_name.lower() for keyword in ["agent", "run", "execute", "goal"]):
+        for call in recent_calls:
+            op_name = str(getattr(call, "op_name", ""))
+            if any(keyword in op_name.lower() for keyword in ["agent", "run", "execute", "goal"]):
                 agent_runs.append({
-                    "Operation": _op_name,
-                    "Status": getattr(_call, "status", "unknown"),
-                    "Duration": f"{getattr(_call, 'duration', 0):.2f}s" if hasattr(_call, "duration") else "N/A",
+                    "Operation": op_name,
+                    "Status": getattr(call, "status", "unknown"),
+                    "Duration": f"{getattr(call, 'duration', 0):.2f}s" if hasattr(call, "duration") else "N/A",
                 })
 
         if agent_runs:
@@ -165,38 +164,35 @@ def _(recent_calls: Any, pd, mo) -> None:
             mo.md("**No recent agent runs found.**")
     except Exception as exc:
         mo.md(f"**Error displaying runs:** {exc}")
+    return
 
 
 @app.cell
-def _(recent_calls: Any, mo, pd) -> None:
+def _(mo, recent_calls):
     """Show improvement suggestions based on Weave traces."""
     try:
-        if isinstance(recent_calls, dict):
-            mo.md("**Error loading calls.**")
-            return
-            
         # Analyze calls for patterns
         total = len(list(recent_calls)) if not hasattr(recent_calls, "__len__") else len(recent_calls)
 
         # Look for iterative improvement patterns
         iteration_calls = []
-        for _call_item in recent_calls:
-            _op_name_item = str(getattr(_call_item, "op_name", ""))
-            if "run_pricing_iteration" in _op_name_item.lower() or "iteration" in _op_name_item.lower():
+        for call in recent_calls:
+            op_name = str(getattr(call, "op_name", ""))
+            if "run_pricing_iteration" in op_name.lower() or "iteration" in op_name.lower():
                 try:
-                    if hasattr(_call_item, "output"):
-                        _output = _call_item.output
-                    elif hasattr(_call_item, "result"):
-                        _output = _call_item.result
+                    if hasattr(call, "output"):
+                        output = call.output
+                    elif hasattr(call, "result"):
+                        output = call.result
                     else:
                         continue
 
-                    if isinstance(_output, dict) and "iteration" in _output:
+                    if isinstance(output, dict) and "iteration" in output:
                         iteration_calls.append({
-                            "iteration": _output.get("iteration", 0),
-                            "success": _output.get("success", False),
-                            "steps": _output.get("steps", 0),
-                            "events": _output.get("events", 0),
+                            "iteration": output.get("iteration", 0),
+                            "success": output.get("success", False),
+                            "steps": output.get("steps", 0),
+                            "events": output.get("events", 0),
                         })
                 except:
                     pass
@@ -208,6 +204,7 @@ def _(recent_calls: Any, mo, pd) -> None:
             mo.md(
                 f"""
                 ## 📈 Iterative Improvement Tracking
+
                 Found {len(iteration_calls)} iterations of pricing task:
                 """
             )
@@ -233,6 +230,7 @@ def _(recent_calls: Any, mo, pd) -> None:
                     mo.md("**No clear improvement yet** - may need more iterations")
 
             # Show iteration table
+            import pandas as pd
             iter_df = pd.DataFrame(iteration_calls)
             mo.table(iter_df)
         elif total > 0:
@@ -254,50 +252,50 @@ def _(recent_calls: Any, mo, pd) -> None:
             mo.md("**Run your agent to get improvement suggestions.**")
     except Exception as exc:
         mo.md(f"**Note:** {exc}")
+    return (pd,)
+
+
 
 
 @app.cell
-def _(recent_calls: Any, weave) -> list[dict]:
+def _(recent_calls, weave):
     """Extract OpenClaw run details with full analysis."""
     openclaw_details = []
     try:
-        if isinstance(recent_calls, dict):
-            return []
-            
         items = list(recent_calls) if not hasattr(recent_calls, "__iter__") else recent_calls
-        for _call_detail in items:
-            _op_name_detail = str(getattr(_call_detail, "op_name", ""))
-            if "record_openclaw_run" in _op_name_detail.lower():
+        for _oc_call in items:
+            _oc_op_name = str(getattr(_oc_call, "op_name", ""))
+            if "record_openclaw_run" in _oc_op_name.lower():
                 try:
                     # Try multiple ways to access the output
-                    _output_detail = None
-                    if hasattr(_call_detail, "output"):
-                        _output_detail = _call_detail.output
-                    elif hasattr(_call_detail, "result"):
-                        _output_detail = _call_detail.result
-                    elif hasattr(_call_detail, "return_value"):
-                        _output_detail = _call_detail.return_value
-                    elif hasattr(_call_detail, "get_output"):
-                        _output_detail = _call_detail.get_output()
+                    _oc_output = None
+                    if hasattr(_oc_call, "output"):
+                        _oc_output = _oc_call.output
+                    elif hasattr(_oc_call, "result"):
+                        _oc_output = _oc_call.result
+                    elif hasattr(_oc_call, "return_value"):
+                        _oc_output = _oc_call.return_value
+                    elif hasattr(_oc_call, "get_output"):
+                        _oc_output = _oc_call.get_output()
                     else:
                         # Try accessing as dict/object
                         try:
-                            if isinstance(_call_detail, dict):
-                                _output_detail = _call_detail.get("output") or _call_detail.get("result")
+                            if isinstance(_oc_call, dict):
+                                _oc_output = _oc_call.get("output") or _oc_call.get("result")
                             else:
                                 # Try to get the call ID and fetch full call
-                                _call_id = getattr(_call_detail, "id", None) or getattr(_call_detail, "_id", None)
-                                if _call_id:
+                                _oc_call_id = getattr(_oc_call, "id", None) or getattr(_oc_call, "_id", None)
+                                if _oc_call_id:
                                     try:
-                                        _full_call = weave.get_op_run(_call_id)
-                                        if _full_call:
-                                            _output_detail = getattr(_full_call, "output", None) or getattr(_full_call, "result", None)
+                                        _oc_full_call = weave.get_call(_oc_call_id)
+                                        if _oc_full_call:
+                                            _oc_output = getattr(_oc_full_call, "output", None) or getattr(_oc_full_call, "result", None)
                                     except:
                                         pass
                         except:
                             pass
 
-                    if _output_detail is None:
+                    if _oc_output is None:
                         # If we can't get output, still record basic info
                         openclaw_details.append({
                             "mode": "unknown",
@@ -305,19 +303,19 @@ def _(recent_calls: Any, weave) -> list[dict]:
                             "iteration": 0,
                             "exit_code": None,
                             "analysis": {},
-                            "timestamp": getattr(_call_detail, "started_at", None),
-                            "raw_call": str(_call_detail)[:200],
+                            "timestamp": getattr(_oc_call, "started_at", None),
+                            "raw_call": str(_oc_call)[:200],
                         })
                         continue
 
-                    if isinstance(_output_detail, dict):
+                    if isinstance(_oc_output, dict):
                         openclaw_details.append({
-                            "mode": _output_detail.get("mode", "unknown"),
-                            "goal": _output_detail.get("goal", "")[:100],  # Truncate long goals
-                            "iteration": _output_detail.get("iteration", 0),
-                            "exit_code": _output_detail.get("exit_code"),
-                            "analysis": _output_detail.get("analysis", {}),
-                            "timestamp": getattr(_call_detail, "started_at", None),
+                            "mode": _oc_output.get("mode", "unknown"),
+                            "goal": _oc_output.get("goal", "")[:100],  # Truncate long goals
+                            "iteration": _oc_output.get("iteration", 0),
+                            "exit_code": _oc_output.get("exit_code"),
+                            "analysis": _oc_output.get("analysis", {}),
+                            "timestamp": getattr(_oc_call, "started_at", None),
                         })
                 except Exception as e:
                     # Still record that we found a call, even if we can't extract details
@@ -327,106 +325,105 @@ def _(recent_calls: Any, weave) -> list[dict]:
                         "iteration": 0,
                         "exit_code": None,
                         "analysis": {},
-                        "timestamp": getattr(_call_detail, "started_at", None),
+                        "timestamp": getattr(_oc_call, "started_at", None),
                     })
     except Exception as e:
         pass
 
     # Sort by iteration and timestamp (most recent first)
     openclaw_details.sort(key=lambda x: (x.get("iteration", 0), x.get("timestamp") or ""), reverse=True)
-    return openclaw_details
+    return (openclaw_details,)
 
 
 @app.cell
-def _(openclaw_details: list[dict], mo, pd) -> None:
+def _(openclaw_details, mo, pd):
     """Display OpenClaw runs with scores and analysis."""
     if not openclaw_details:
         mo.md("**No OpenClaw runs found yet.** Use the Beach panel to run OpenClaw tasks.")
-        return
+    else:
+        mo.md("## 🦀 OpenClaw Runs & Analysis")
 
-    mo.md("## 🦀 OpenClaw Runs & Analysis")
+        # Group by goal to show iteration progression
+        _display_goals_map = {}
+        for _display_detail in openclaw_details:
+            _display_goal_key = _display_detail.get("goal", "unknown")[:50]
+            if _display_goal_key not in _display_goals_map:
+                _display_goals_map[_display_goal_key] = []
+            _display_goals_map[_display_goal_key].append(_display_detail)
 
-    # Group by goal to show iteration progression
-    goals_map = {}
-    for _detail in openclaw_details:
-        _goal_key = _detail.get("goal", "unknown")[:50]
-        if _goal_key not in goals_map:
-            goals_map[_goal_key] = []
-        goals_map[_goal_key].append(_detail)
+        for _display_goal_key, _display_runs in list(_display_goals_map.items())[:5]:  # Show top 5 goals
+            mo.md(f"### Goal: `{_display_goal_key}...`")
 
-    for _goal_key, _runs in list(goals_map.items())[:5]:  # Show top 5 goals
-        mo.md(f"### Goal: `{_goal_key}...`")
+            _display_runs_data = []
+            for _display_run in _display_runs:
+                _display_analysis = _display_run.get("analysis", {})
+                _display_score = _display_analysis.get("score", "N/A")
+                _display_suggestions = _display_analysis.get("suggestions", [])
 
-        _runs_data = []
-        for _run in _runs:
-            _analysis = _run.get("analysis", {})
-            _score = _analysis.get("score", "N/A")
-            _suggestions = _analysis.get("suggestions", [])
+                _display_runs_data.append({
+                    "Iteration": _display_run.get("iteration", 0),
+                    "Mode": _display_run.get("mode", "unknown"),
+                    "Score": f"{_display_score:.2f}" if isinstance(_display_score, (int, float)) else str(_display_score),
+                    "Exit": _display_run.get("exit_code", "N/A"),
+                    "Suggestions": len(_display_suggestions),
+                })
 
-            _runs_data.append({
-                "Iteration": _run.get("iteration", 0),
-                "Mode": _run.get("mode", "unknown"),
-                "Score": f"{_score:.2f}" if isinstance(_score, (int, float)) else str(_score),
-                "Exit": _run.get("exit_code", "N/A"),
-                "Suggestions": len(_suggestions),
-            })
+            if _display_runs_data:
+                _display_runs_df = pd.DataFrame(_display_runs_data)
+                mo.table(_display_runs_df)
 
-        if _runs_data:
-            _runs_df = pd.DataFrame(_runs_data)
-            mo.table(_runs_df)
+                # Show suggestions from the latest run
+                _display_latest = _display_runs[0]
+                _display_latest_analysis = _display_latest.get("analysis", {})
+                _display_latest_suggestions = _display_latest_analysis.get("suggestions", [])
+                if _display_latest_suggestions:
+                    mo.md("**Latest Prompt Suggestions:**")
+                    for _display_sug in _display_latest_suggestions[:5]:
+                        mo.md(f"- {_display_sug}")
 
-            # Show suggestions from the latest run
-            _latest = _runs[0]
-            _latest_analysis = _latest.get("analysis", {})
-            _latest_suggestions = _latest_analysis.get("suggestions", [])
-            if _latest_suggestions:
-                mo.md("**Latest Prompt Suggestions:**")
-                for _sug in _latest_suggestions[:5]:
-                    mo.md(f"- {_sug}")
-
-        mo.md("---")
+            mo.md("---")
+    return
 
 
 @app.cell
-def _(openclaw_details: list[dict], mo) -> None:
+def _(openclaw_details, mo):
     """Show prompt evolution across iterations."""
-    if not openclaw_details:
-        return
+    if openclaw_details:
+        # Group by goal and show how prompts improve
+        _evol_goals_map = {}
+        for _evol_detail in openclaw_details:
+            _evol_goal_key = _evol_detail.get("goal", "unknown")[:50]
+            if _evol_goal_key not in _evol_goals_map:
+                _evol_goals_map[_evol_goal_key] = []
+            _evol_goals_map[_evol_goal_key].append(_evol_detail)
 
-    # Group by goal and show how prompts improve
-    _goals_map_evolution = {}
-    for _detail_evolution in openclaw_details:
-        _goal_key_evolution = _detail_evolution.get("goal", "unknown")[:50]
-        if _goal_key_evolution not in _goals_map_evolution:
-            _goals_map_evolution[_goal_key_evolution] = []
-        _goals_map_evolution[_goal_key_evolution].append(_detail_evolution)
+        for _evol_goal_key, _evol_runs in list(_evol_goals_map.items())[:3]:  # Show top 3 goals
+            if len(_evol_runs) < 2:
+                continue  # Need at least 2 iterations to show evolution
 
-    for _goal_key_evolution, _runs_evolution in list(_goals_map_evolution.items())[:3]:  # Show top 3 goals
-        if len(_runs_evolution) < 2:
-            continue  # Need at least 2 iterations to show evolution
+            # Sort by iteration
+            _evol_runs.sort(key=lambda x: x.get("iteration", 0))
 
-        # Sort by iteration
-        _runs_evolution.sort(key=lambda x: x.get("iteration", 0))
+            mo.md(f"### 📈 Prompt Evolution: `{_evol_goal_key}...`")
 
-        mo.md(f"### 📈 Prompt Evolution: `{_goal_key_evolution}...`")
+            for _evol_i, _evol_run in enumerate(_evol_runs):
+                _evol_iteration = _evol_run.get("iteration", 0)
+                _evol_analysis = _evol_run.get("analysis", {})
+                _evol_score = _evol_analysis.get("score", "N/A")
+                _evol_suggestions = _evol_analysis.get("suggestions", [])
 
-        for i, _run_evolution in enumerate(_runs_evolution):
-            _iteration_evolution = _run_evolution.get("iteration", 0)
-            _analysis_evolution = _run_evolution.get("analysis", {})
-            _score_evolution = _analysis_evolution.get("score", "N/A")
-            _suggestions_evolution = _analysis_evolution.get("suggestions", [])
+                mo.md(f"**Iteration {_evol_iteration}** (Score: {_evol_score:.2f if isinstance(_evol_score, (int, float)) else _evol_score})")
 
-            mo.md(f"**Iteration {_iteration_evolution}** (Score: {_score_evolution:.2f if isinstance(_score_evolution, (int, float)) else _score_evolution})")
+                if _evol_suggestions:
+                    mo.md("**Applied Suggestions:**")
+                    for _evol_sug in _evol_suggestions[:3]:
+                        mo.md(f"  ✓ {_evol_sug}")
 
-            if _suggestions_evolution:
-                mo.md("**Applied Suggestions:**")
-                for _sug_evolution in _suggestions_evolution[:3]:
-                    mo.md(f"  ✓ {_sug_evolution}")
+                if _evol_i < len(_evol_runs) - 1:
+                    mo.md("↓ *Next iteration incorporates feedback* ↓")
 
-            if i < len(_runs_evolution) - 1:
-                mo.md("↓ *Next iteration incorporates feedback* ↓")
-
-        mo.md("---")
+            mo.md("---")
+    return
 
 
 if __name__ == "__main__":
