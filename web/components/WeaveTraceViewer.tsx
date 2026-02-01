@@ -13,10 +13,20 @@ export default function WeaveTraceViewer({
   credentials,
 }: WeaveTraceViewerProps) {
   const getWeaveUrl = () => {
-    const entity = credentials.wandb_entity || 'your-entity';
+    const entity = credentials.wandb_entity;
     const project = credentials.wandb_project;
+    
+    if (!entity) {
+      // If entity is missing, return a generic W&B URL or show error
+      return project 
+        ? `https://wandb.ai/${project}/weave` 
+        : 'https://wandb.ai';
+    }
+    
     return `https://wandb.ai/${entity}/${project}/weave`;
   };
+
+  const hasEntity = !!credentials.wandb_entity;
 
   return (
     <div className="bg-slate-800 rounded-lg p-6">
@@ -31,13 +41,30 @@ export default function WeaveTraceViewer({
           call tree and execution details in the Weave UI.
         </p>
 
+        {!hasEntity && (
+          <div className="p-3 bg-yellow-900/30 border border-yellow-700 rounded-lg">
+            <p className="text-yellow-300 text-sm">
+              ⚠️ <strong>W&B Entity missing:</strong> Set <code className="bg-slate-800 px-1 rounded">WANDB_ENTITY</code> in your environment variables to view Weave traces.
+            </p>
+          </div>
+        )}
+
         <a
           href={getWeaveUrl()}
           target="_blank"
           rel="noopener noreferrer"
-          className="block w-full px-4 py-3 bg-primary-600 hover:bg-primary-700 text-white rounded-lg transition-colors text-center"
+          className={`block w-full px-4 py-3 rounded-lg transition-colors text-center ${
+            hasEntity
+              ? 'bg-primary-600 hover:bg-primary-700 text-white'
+              : 'bg-slate-600 text-slate-400 cursor-not-allowed'
+          }`}
+          onClick={(e) => {
+            if (!hasEntity) {
+              e.preventDefault();
+            }
+          }}
         >
-          Open Weave Dashboard
+          {hasEntity ? 'Open Weave Dashboard' : 'Set WANDB_ENTITY to enable'}
         </a>
 
         {execution && (
