@@ -113,6 +113,7 @@ async def run_agent(request: AgentRequest):
 
 
 BEACH_STATE_PATH = os.getenv("LOBSTERPOT_BEACH_STATE_PATH", ".beach_state.json")
+OPENCLAW_EVENT_LIMIT = int(os.getenv("LOBSTERPOT_OPENCLAW_EVENT_LIMIT", "500"))
 
 
 def _load_beach_state() -> dict:
@@ -134,6 +135,51 @@ def _save_beach_state(state: dict) -> None:
 def _build_openclaw_cmd(base_cmd: str, goal: str) -> list[str]:
     parts = shlex.split(base_cmd, posix=False)
     return parts + [goal]
+
+
+def _analyze_openclaw_output(output_lines: list[str]) -> dict:
+    lower = "\n".join(output_lines).lower()
+    error_hits = sum(token in lower for token in ["error", "failed", "exception", "traceback"])
+    success_hits = sum(token in lower for token in ["complete", "completed", "success", "done"])
+    pricing_hits = sum(
+        token in lower
+        for token in [
+            "shopbiolinkdepot",
+            "biolink",
+            "pricing",
+            "price",
+            "google",
+            "images",
+            "compare",
+            "vendor",
+        ]
+    )
+
+    score = 0.5
+    score += min(0.3, success_hits * 0.1)
+    score += min(0.2, pricing_hits * 0.05)
+    score -= min(0.4, error_hits * 0.15)
+    score = max(0.0, min(1.0, score))
+
+    suggestions: list[str] = []
+    if "shopbiolinkdepot" not in lower:
+        suggestions.append("Include the exact shopbiolinkdepot product names and URLs.")
+    if "google" not in lower:
+        suggestions.append("Add explicit web search steps (Google/Bing) for each product.")
+    if "image" not in lower and "compare" not in lower:
+        suggestions.append("Compare product images to confirm the correct item.")
+    if "price" not in lower and "pricing" not in lower:
+        suggestions.append("Extract price from reputable vendor pages, not marketplaces.")
+    if error_hits > 0:
+        suggestions.append("Add recovery steps for errors and retry navigation.")
+
+    return {
+        "score": round(score, 2),
+        "error_hits": error_hits,
+        "success_hits": success_hits,
+        "pricing_hits": pricing_hits,
+        "suggestions": suggestions,
+    }
 
 
 def _stream_openclaw(
@@ -170,6 +216,7 @@ def _stream_openclaw(
         return
 
     output_lines: list[str] = []
+    events: list[dict] = []
     if process.stdout:
         for line in process.stdout:
             line = line.strip()
@@ -178,6 +225,9 @@ def _stream_openclaw(
             output_lines.append(line)
             try:
                 parsed = json.loads(line)
+                events.append(parsed)
+                if len(events) > OPENCLAW_EVENT_LIMIT:
+                    events.pop(0)
                 payload = {"type": "openclaw_event", "mode": mode, "payload": parsed}
             except Exception:
                 payload = {"type": "openclaw_log", "mode": mode, "message": line}
@@ -186,17 +236,29 @@ def _stream_openclaw(
     process.wait()
     exit_code = process.returncode
 
-    tail = output_lines[-20:]
-    record_openclaw_run(mode=mode, goal=goal, iteration=iteration, exit_code=exit_code, output_tail=tail)
+    tail = output_lines[-50:]
+    analysis = _analyze_openclaw_output(output_lines)
+    record_openclaw_run(
+        mode=mode,
+        goal=goal,
+        iteration=iteration,
+        exit_code=exit_code,
+        output_tail=tail,
+        events=events,
+        analysis=analysis,
+    )
     _save_beach_state(
         {
             "last_mode": mode,
             "last_goal": goal,
             "last_iteration": iteration,
             "last_output_tail": tail,
+            "last_analysis": analysis,
         }
     )
 
+    yield f"data: {json.dumps({'type': 'openclaw_score', 'mode': mode, 'score': analysis['score']})}\n\n"
+    yield f"data: {json.dumps({'type': 'openclaw_suggestions', 'mode': mode, 'suggestions': analysis['suggestions']})}\n\n"
     yield f"data: {json.dumps({'type': 'openclaw_complete', 'mode': mode, 'exit_code': exit_code})}\n\n"
 
 
@@ -207,6 +269,8 @@ def record_openclaw_run(
     iteration: int,
     exit_code: int | None,
     output_tail: list[str],
+    events: list[dict],
+    analysis: dict,
 ) -> dict:
     return {
         "mode": mode,
@@ -214,6 +278,8 @@ def record_openclaw_run(
         "iteration": iteration,
         "exit_code": exit_code,
         "output_tail": output_tail,
+        "events": events,
+        "analysis": analysis,
     }
 
 
@@ -223,7 +289,14 @@ async def openclaw_beach(request: OpenClawRequest):
     goal = request.goal
     if request.iteration > 0 and state.get("last_output_tail"):
         tail = "\n".join(state.get("last_output_tail", []))
+        suggestion_lines = []
+        last_analysis = state.get("last_analysis") or {}
+        for item in last_analysis.get("suggestions", []):
+            suggestion_lines.append(f"- {item}")
+        suggestions = "\n".join(suggestion_lines)
         goal = f"{goal}\n\nPrevious beach notes:\n{tail}"
+        if suggestions:
+            goal += f"\n\nPatch suggestions:\n{suggestions}"
 
     return StreamingResponse(
         _stream_openclaw("beach", goal, request.iteration),

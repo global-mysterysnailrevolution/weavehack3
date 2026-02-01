@@ -37,6 +37,7 @@ def _(status: str) -> None:
         {status}
 
         This notebook reads the latest Weave calls and renders a quick preview.
+        It also highlights OpenClaw beach/sea runs with scores and patch suggestions.
         """
     )
 
@@ -55,6 +56,25 @@ def _(calls: Any, limit: int) -> Any:
         return list(calls)[:limit]
     except Exception as exc:
         return {"error": f"Unable to preview calls: {exc}"}
+
+
+@app.cell
+def _(calls: Any, limit: int) -> Any:
+    """Extract OpenClaw runs recorded by record_openclaw_run."""
+    try:
+        if hasattr(calls, "to_pandas"):
+            df = calls.to_pandas()
+            mask = df["op_name"].astype(str).str.contains("record_openclaw_run", na=False)
+            return df[mask].head(limit)
+    except Exception:
+        pass
+
+    try:
+        items = list(calls)
+        filtered = [item for item in items if "record_openclaw_run" in str(getattr(item, "op_name", ""))]
+        return filtered[:limit]
+    except Exception as exc:
+        return {"error": f"Unable to filter OpenClaw runs: {exc}"}
 
 
 if __name__ == "__main__":

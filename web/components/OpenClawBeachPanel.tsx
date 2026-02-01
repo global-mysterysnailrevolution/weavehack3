@@ -18,6 +18,8 @@ export default function OpenClawBeachPanel({
   const [isRunning, setIsRunning] = useState(false);
   const [iteration, setIteration] = useState(0);
   const [logs, setLogs] = useState<string[]>([]);
+  const [score, setScore] = useState<number | null>(null);
+  const [suggestions, setSuggestions] = useState<string[]>([]);
 
   const apiBase = process.env.NEXT_PUBLIC_API_BASE_URL || '';
   const openclawBase = useMemo(() => {
@@ -29,6 +31,8 @@ export default function OpenClawBeachPanel({
     if (!goal.trim()) return;
     setIsRunning(true);
     setLogs([]);
+    setScore(null);
+    setSuggestions([]);
 
     const execId = execution?.id || `exec_${Date.now()}`;
     onUpdateExecution((prev) => ({
@@ -88,6 +92,10 @@ export default function OpenClawBeachPanel({
               setLogs((prev) => [...prev, data.message]);
             } else if (data.type === 'openclaw_event') {
               setLogs((prev) => [...prev, JSON.stringify(data.payload)]);
+            } else if (data.type === 'openclaw_score') {
+              setScore(data.score);
+            } else if (data.type === 'openclaw_suggestions') {
+              setSuggestions(Array.isArray(data.suggestions) ? data.suggestions : []);
             } else if (data.type === 'openclaw_complete') {
               setLogs((prev) => [...prev, `Complete (exit ${data.exit_code})`]);
             } else if (data.type === 'error') {
@@ -195,6 +203,25 @@ export default function OpenClawBeachPanel({
         ) : (
           logs.map((line, idx) => <div key={`${idx}-${line}`}>{line}</div>)
         )}
+      </div>
+
+      <div className="rounded-lg border border-slate-700 bg-slate-900/40 p-3 text-sm text-slate-200 space-y-2">
+        <div>
+          <span className="text-slate-400">Safety/Quality Score:</span>{' '}
+          {score === null ? '—' : score.toFixed(2)}
+        </div>
+        <div>
+          <span className="text-slate-400">Patch Suggestions:</span>
+          {suggestions.length === 0 ? (
+            <div className="text-slate-400">—</div>
+          ) : (
+            <ul className="list-disc list-inside text-slate-200">
+              {suggestions.map((item) => (
+                <li key={item}>{item}</li>
+              ))}
+            </ul>
+          )}
+        </div>
       </div>
     </div>
   );
