@@ -284,20 +284,39 @@ def _stream_openclaw(
 
     output_lines: list[str] = []
     events: list[dict] = []
+    line_count = 0
+    
     if process.stdout:
         for line in process.stdout:
             line = line.strip()
             if not line:
                 continue
+            
+            line_count += 1
             output_lines.append(line)
+            
+            # Stream every line immediately
             try:
                 parsed = json.loads(line)
                 events.append(parsed)
                 if len(events) > OPENCLAW_EVENT_LIMIT:
                     events.pop(0)
-                payload = {"type": "openclaw_event", "mode": mode, "payload": parsed}
+                payload = {
+                    "type": "openclaw_event",
+                    "mode": mode,
+                    "payload": parsed,
+                    "line_number": line_count,
+                }
             except Exception:
-                payload = {"type": "openclaw_log", "mode": mode, "message": line}
+                # Not JSON - treat as log message
+                payload = {
+                    "type": "openclaw_log",
+                    "mode": mode,
+                    "message": line,
+                    "line_number": line_count,
+                }
+            
+            # Always yield the log/event immediately
             yield f"data: {json.dumps(payload)}\n\n"
 
     process.wait()

@@ -17,9 +17,11 @@ export default function OpenClawBeachPanel({
   const [goal, setGoal] = useState('');
   const [isRunning, setIsRunning] = useState(false);
   const [iteration, setIteration] = useState(0);
-  const [logs, setLogs] = useState<string[]>([]);
+  const [logs, setLogs] = useState<Array<{ timestamp: string; type: string; message: string; data?: any }>>([]);
   const [score, setScore] = useState<number | null>(null);
   const [suggestions, setSuggestions] = useState<string[]>([]);
+  const [showFullLogs, setShowFullLogs] = useState(false);
+  const [filterType, setFilterType] = useState<string>('all');
 
   const apiBase = process.env.NEXT_PUBLIC_API_BASE_URL || '';
   const openclawBase = useMemo(() => {
@@ -88,18 +90,66 @@ export default function OpenClawBeachPanel({
           const payload = line.slice(6);
           try {
             const data = JSON.parse(payload);
+            const timestamp = new Date().toISOString();
+            
             if (data.type === 'openclaw_log') {
-              setLogs((prev) => [...prev, data.message]);
+              setLogs((prev) => [...prev, {
+                timestamp,
+                type: 'log',
+                message: data.message,
+              }]);
             } else if (data.type === 'openclaw_event') {
-              setLogs((prev) => [...prev, JSON.stringify(data.payload)]);
+              setLogs((prev) => [...prev, {
+                timestamp,
+                type: 'event',
+                message: `Event: ${data.payload?.type || 'unknown'}`,
+                data: data.payload,
+              }]);
+            } else if (data.type === 'openclaw_start') {
+              setLogs((prev) => [...prev, {
+                timestamp,
+                type: 'start',
+                message: `Starting ${data.mode} mode (iteration ${data.iteration})`,
+                data: { mode: data.mode, goal: data.goal, iteration: data.iteration },
+              }]);
             } else if (data.type === 'openclaw_score') {
               setScore(data.score);
+              setLogs((prev) => [...prev, {
+                timestamp,
+                type: 'score',
+                message: `Score: ${data.score.toFixed(2)}`,
+                data: { score: data.score },
+              }]);
             } else if (data.type === 'openclaw_suggestions') {
               setSuggestions(Array.isArray(data.suggestions) ? data.suggestions : []);
+              setLogs((prev) => [...prev, {
+                timestamp,
+                type: 'suggestions',
+                message: `Generated ${data.suggestions?.length || 0} suggestions`,
+                data: { suggestions: data.suggestions },
+              }]);
             } else if (data.type === 'openclaw_complete') {
-              setLogs((prev) => [...prev, `Complete (exit ${data.exit_code})`]);
+              setLogs((prev) => [...prev, {
+                timestamp,
+                type: 'complete',
+                message: `Complete (exit code: ${data.exit_code})`,
+                data: { exit_code: data.exit_code, mode: data.mode },
+              }]);
             } else if (data.type === 'error') {
-              setLogs((prev) => [...prev, `Error: ${data.error}`]);
+              setLogs((prev) => [...prev, {
+                timestamp,
+                type: 'error',
+                message: `Error: ${data.error}`,
+                data: { error: data.error },
+              }]);
+            } else {
+              // Capture any other event types
+              setLogs((prev) => [...prev, {
+                timestamp,
+                type: data.type || 'unknown',
+                message: JSON.stringify(data),
+                data,
+              }]);
             }
 
             onUpdateExecution((prev) => ({
@@ -197,12 +247,77 @@ export default function OpenClawBeachPanel({
         </button>
       </div>
 
-      <div className="rounded-lg border border-slate-700 bg-slate-900/40 p-3 text-xs text-slate-300 max-h-48 overflow-y-auto">
-        {logs.length === 0 ? (
-          <p>No OpenClaw logs yet.</p>
-        ) : (
-          logs.map((line, idx) => <div key={`${idx}-${line}`}>{line}</div>)
-        )}
+      <div className="rounded-lg border border-slate-700 bg-slate-900/40 p-3 space-y-2">
+        <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-semibold text-white">OpenClaw Activity Log</span>
+            <span className="text-xs text-slate-400">({logs.length} entries)</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <select
+              value={filterType}
+              onChange={(e) => setFilterType(e.target.value)}
+              className="px-2 py-1 bg-slate-700 text-white text-xs rounded border border-slate-600"
+            >
+              <option value="all">All</option>
+              <option value="log">Logs</option>
+              <option value="event">Events</option>
+              <option value="start">Start</option>
+              <option value="score">Scores</option>
+              <option value="suggestions">Suggestions</option>
+              <option value="complete">Complete</option>
+              <option value="error">Errors</option>
+            </select>
+            <button
+              onClick={() => setShowFullLogs(!showFullLogs)}
+              className="px-2 py-1 bg-slate-700 hover:bg-slate-600 text-white text-xs rounded transition-colors"
+            >
+              {showFullLogs ? 'Collapse' : 'Expand'}
+            </button>
+          </div>
+        </div>
+        
+        <div className={`bg-slate-950 rounded p-2 font-mono text-xs overflow-y-auto ${showFullLogs ? 'max-h-96' : 'max-h-48'}`}>
+          {logs.length === 0 ? (
+            <p className="text-slate-500 text-center py-4">No OpenClaw activity yet.</p>
+          ) : (
+            logs
+              .filter(log => filterType === 'all' || log.type === filterType)
+              .map((log, idx) => (
+                <div key={idx} className="mb-2 pb-2 border-b border-slate-800 last:border-0">
+                  <div className="flex items-start gap-2">
+                    <span className="text-slate-500 text-[10px] mt-1 whitespace-nowrap">
+                      {new Date(log.timestamp).toLocaleTimeString()}
+                    </span>
+                    <span className={`px-1.5 py-0.5 rounded text-[10px] font-semibold ${
+                      log.type === 'error' ? 'bg-red-900/50 text-red-300' :
+                      log.type === 'start' ? 'bg-blue-900/50 text-blue-300' :
+                      log.type === 'complete' ? 'bg-green-900/50 text-green-300' :
+                      log.type === 'score' ? 'bg-yellow-900/50 text-yellow-300' :
+                      log.type === 'suggestions' ? 'bg-purple-900/50 text-purple-300' :
+                      log.type === 'event' ? 'bg-cyan-900/50 text-cyan-300' :
+                      'bg-slate-800 text-slate-400'
+                    }`}>
+                      {log.type.toUpperCase()}
+                    </span>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-slate-300 break-words">{log.message}</div>
+                      {log.data && (
+                        <details className="mt-1">
+                          <summary className="text-slate-500 text-[10px] cursor-pointer hover:text-slate-400">
+                            View details
+                          </summary>
+                          <pre className="mt-1 p-2 bg-slate-900 rounded text-[10px] text-slate-400 overflow-x-auto">
+                            {JSON.stringify(log.data, null, 2)}
+                          </pre>
+                        </details>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ))
+          )}
+        </div>
       </div>
 
       <div className="rounded-lg border border-slate-700 bg-slate-900/40 p-3 text-sm text-slate-200 space-y-2">
