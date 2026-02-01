@@ -138,46 +138,113 @@ def _build_openclaw_cmd(base_cmd: str, goal: str) -> list[str]:
 
 
 def _analyze_openclaw_output(output_lines: list[str]) -> dict:
-    lower = "\n".join(output_lines).lower()
-    error_hits = sum(token in lower for token in ["error", "failed", "exception", "traceback"])
-    success_hits = sum(token in lower for token in ["complete", "completed", "success", "done"])
-    pricing_hits = sum(
-        token in lower
-        for token in [
-            "shopbiolinkdepot",
-            "biolink",
-            "pricing",
-            "price",
-            "google",
-            "images",
-            "compare",
-            "vendor",
-        ]
-    )
-
-    score = 0.5
-    score += min(0.3, success_hits * 0.1)
-    score += min(0.2, pricing_hits * 0.05)
+    """Analyze OpenClaw output for pricing extraction tasks and generate improvement suggestions."""
+    full_output = "\n".join(output_lines)
+    lower = full_output.lower()
+    
+    # Error detection
+    error_hits = sum(token in lower for token in ["error", "failed", "exception", "traceback", "timeout"])
+    
+    # Success indicators
+    success_hits = sum(token in lower for token in [
+        "complete", "completed", "success", "done", "finished",
+        "saved", "extracted", "found", "verified"
+    ])
+    
+    # Pricing task specific keywords
+    pricing_keywords = [
+        "shopbiolinkdepot", "biolink", "pricing", "price", "$", "usd",
+        "product", "item", "cost", "retail"
+    ]
+    pricing_hits = sum(token in lower for token in pricing_keywords)
+    
+    # Web search indicators
+    search_hits = sum(token in lower for token in [
+        "google", "search", "bing", "query", "results"
+    ])
+    
+    # Image/screenshot indicators
+    image_hits = sum(token in lower for token in [
+        "screenshot", "image", "photo", "picture", "compare", "visual"
+    ])
+    
+    # Documentation indicators
+    doc_hits = sum(token in lower for token in [
+        "json", "file", "save", "document", "report", "output", "data"
+    ])
+    
+    # Vendor verification indicators
+    vendor_hits = sum(token in lower for token in [
+        "vendor", "ebay", "amazon", "marketplace", "legitimate", "retailer"
+    ])
+    
+    # Calculate base score
+    score = 0.3  # Start lower to encourage improvement
+    
+    # Success bonus
+    score += min(0.2, success_hits * 0.05)
+    
+    # Task-specific bonuses
+    score += min(0.15, pricing_hits * 0.02)  # Pricing keywords
+    score += min(0.15, search_hits * 0.05)    # Web search
+    score += min(0.1, image_hits * 0.05)      # Screenshots/images
+    score += min(0.1, doc_hits * 0.05)        # Documentation
+    score += min(0.1, vendor_hits * 0.05)     # Vendor verification
+    
+    # Error penalty
     score -= min(0.4, error_hits * 0.15)
+    
     score = max(0.0, min(1.0, score))
-
+    
+    # Generate specific suggestions
     suggestions: list[str] = []
-    if "shopbiolinkdepot" not in lower:
+    
+    if "shopbiolinkdepot" not in lower and "biolink" not in lower:
         suggestions.append("Include the exact shopbiolinkdepot product names and URLs.")
-    if "google" not in lower:
+    
+    if search_hits == 0:
         suggestions.append("Add explicit web search steps (Google/Bing) for each product.")
-    if "image" not in lower and "compare" not in lower:
-        suggestions.append("Compare product images to confirm the correct item.")
+    elif search_hits < 2:
+        suggestions.append("Perform web searches for each product individually, not just one search.")
+    
+    if image_hits == 0:
+        suggestions.append("Take screenshots of product pages showing prices and compare product images.")
+    elif "compare" not in lower:
+        suggestions.append("Compare product images from Google results to confirm it's the same item.")
+    
     if "price" not in lower and "pricing" not in lower:
-        suggestions.append("Extract price from reputable vendor pages, not marketplaces.")
+        suggestions.append("Extract and document prices from both shopbiolinkdepot and market sources.")
+    elif "difference" not in lower and "compare" not in lower:
+        suggestions.append("Calculate and document the price difference between shopbiolinkdepot and market prices.")
+    
+    if vendor_hits == 0:
+        suggestions.append("Identify if items are only on eBay or from legitimate vendors.")
+    
+    if doc_hits == 0:
+        suggestions.append("Save findings to a structured JSON file with product details and pricing comparisons.")
+    elif "json" not in lower:
+        suggestions.append("Ensure output is saved in structured JSON format as specified.")
+    
+    if "screenshot" not in lower and "image" not in lower:
+        suggestions.append("Take screenshots of product pages showing prices for verification.")
+    
     if error_hits > 0:
-        suggestions.append("Add recovery steps for errors and retry navigation.")
-
+        suggestions.append("Add error recovery steps and retry navigation if pages fail to load.")
+    
+    # Check for completeness
+    if pricing_hits > 0 and search_hits > 0 and image_hits > 0 and doc_hits > 0:
+        if score < 0.8:
+            suggestions.append("Review output structure - all components present but may need refinement.")
+    
     return {
         "score": round(score, 2),
         "error_hits": error_hits,
         "success_hits": success_hits,
         "pricing_hits": pricing_hits,
+        "search_hits": search_hits,
+        "image_hits": image_hits,
+        "doc_hits": doc_hits,
+        "vendor_hits": vendor_hits,
         "suggestions": suggestions,
     }
 

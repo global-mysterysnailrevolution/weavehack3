@@ -1,0 +1,41 @@
+Navigate to https://www.shopbiolinkdepot.org/ and find all products with listed prices. For each product:
+
+1. Take a screenshot of the product page showing the price
+2. Search Google for the product name to find actual market prices
+3. Compare product images from Google results to confirm it's the same item
+4. Identify if the item is only available on eBay or from legitimate vendors
+5. Document the pricing difference between shopbiolinkdepot.org and actual market prices
+6. Save all findings to a structured JSON file with this format:
+
+{
+  "products": [
+    {
+      "name": "Product Name",
+      "shopbiolinkdepot_price": "$X.XX",
+      "shopbiolinkdepot_url": "https://www.shopbiolinkdepot.org/product-url",
+      "actual_market_price": "$Y.YY",
+      "price_difference": "$Z.ZZ",
+      "vendor_type": "legitimate_vendor" | "ebay_only" | "both",
+      "verified_match": true | false,
+      "screenshot_path": "path/to/screenshot.png",
+      "google_search_url": "https://google.com/search?q=...",
+      "notes": "Any additional observations"
+    }
+  ],
+  "summary": {
+    "total_products": 0,
+    "overpriced": 0,
+    "correctly_priced": 0,
+    "underpriced": 0,
+    "extraction_date": "YYYY-MM-DD"
+  }
+}
+
+Important requirements:
+- Include the exact shopbiolinkdepot product names and URLs
+- Add explicit web search steps (Google/Bing) for each product
+- Compare product images to confirm the correct item
+- Extract price from reputable vendor pages, not just marketplaces
+- Take clear screenshots showing prices
+- Verify each product is actually the same item by comparing images
+- Document all findings systematically
