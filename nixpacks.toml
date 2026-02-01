@@ -4,13 +4,13 @@ nixPkgs = ["nodejs-18_x", "python310Full", "python310Packages.pip"]
 [phases.install]
 cmds = [
   "python -m venv /opt/venv",
-  "/opt/venv/bin/pip install --upgrade pip",
-  "/opt/venv/bin/pip install -e .",
-  "/opt/venv/bin/pip install fastapi uvicorn"
+  "/opt/venv/bin/pip install --upgrade pip"
 ]
 
 [phases.build]
 cmds = [
+  "/opt/venv/bin/pip install -e .",
+  "/opt/venv/bin/pip install fastapi uvicorn",
   "cd web && npm install",
   "cd web && npm run build"
 ]
