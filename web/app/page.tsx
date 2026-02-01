@@ -76,7 +76,7 @@ export default function Home() {
         {!backgroundImageError && (
           <div className="relative w-full h-full">
             <Image
-              src="/fisherman-background.jpg"
+              src="/fisherman-background.svg"
               alt="Fisherman with lobster"
               fill
               className="object-cover"
@@ -100,7 +100,7 @@ export default function Home() {
             <div className="flex justify-center mb-4">
               <div className="relative w-[200px] h-[100px]">
                 <Image
-                  src="/lobsterpot-logo.png"
+                  src="/lobsterpot-logo.svg"
                   alt="Lobster Pot Logo"
                   fill
                   className="object-contain"
