@@ -35,16 +35,12 @@ export async function GET(
   }
 
   try {
-    // Handle case where params might be undefined or empty (root path /api/marimo)
-    let resolvedParams: { path?: string[] } = {};
-    if (params) {
-      resolvedParams = await Promise.resolve(params);
-    }
-    
+    // Handle optional catch-all: params.path is undefined for /api/marimo, or array for /api/marimo/...
+    const resolvedParams = params ? await Promise.resolve(params) : {};
     const pathParts = resolvedParams.path || [];
     const relativePath = pathParts.length ? pathParts.join('/') : '';
 
-    // If no path, use base URL directly
+    // Build target URL: if no path parts, use base URL; otherwise append path
     const targetUrl = pathParts.length 
       ? new URL(relativePath, baseUrl)
       : new URL(baseUrl.toString());
