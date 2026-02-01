@@ -34,12 +34,14 @@ def _(project: str, entity: str | None) -> str:
 def _(status: str) -> None:
     mo.md(
         f"""
-        # 🦞 Agent Improvement Dashboard
+        # 🦞 Lobster Pot - Self-Improving Agent Dashboard
 
         {status}
 
-        This dashboard analyzes Weave traces to show how your RLM-VLA agent improves over time.
-        It tracks performance metrics, action patterns, and identifies optimization opportunities.
+        **WeaveHacks 3 Demo** - This dashboard visualizes how the Lobster Pot safety layer enables iterative self-improvement.
+        
+        The agent learns from Weave traces, identifies issues, generates suggestions, and improves with each iteration.
+        Watch the metrics below to see improvement in real-time!
         """
     )
 
