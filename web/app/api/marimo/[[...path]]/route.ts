@@ -17,9 +17,10 @@ function getTargetBaseUrl(): URL | null {
 
 export async function GET(
   req: NextRequest,
-  { params }: { params: Promise<{ path?: string[] }> | { path?: string[] } }
+  { params }: { params?: Promise<{ path?: string[] }> | { path?: string[] } }
 ) {
-  const resolvedParams = await Promise.resolve(params);
+  // Handle case where params might be undefined (root path /api/marimo)
+  const resolvedParams = params ? await Promise.resolve(params) : { path: [] };
   const baseUrl = getTargetBaseUrl();
   
   if (!baseUrl) {
