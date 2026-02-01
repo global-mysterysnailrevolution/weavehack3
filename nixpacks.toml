@@ -3,6 +3,8 @@ nixPkgs = ["nodejs-18_x", "python310Full", "python310Packages.pip"]
 
 [phases.install]
 cmds = [
+  "python -m ensurepip --upgrade",
+  "python -m pip install --upgrade pip",
   "python -m pip install -e .",
   "python -m pip install fastapi uvicorn"
 ]
