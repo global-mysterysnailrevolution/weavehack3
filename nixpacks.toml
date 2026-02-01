@@ -3,8 +3,8 @@ nixPkgs = ["nodejs-18_x", "python310"]
 
 [phases.install]
 cmds = [
-  "pip install -e .",
-  "pip install fastapi uvicorn"
+  "python -m pip install -e .",
+  "python -m pip install fastapi uvicorn"
 ]
 
 [phases.build]
