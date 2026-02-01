@@ -198,7 +198,7 @@ export default function AgentDashboard({
         <ActionHistory actions={execution?.trajectory || []} />
         <RLMVisualization execution={execution} />
         <WeaveTraceViewer execution={execution} credentials={credentials} />
-        <MarimoEmbed src={marimoUrl} />
+        <MarimoEmbed src={marimoUrl} execution={execution} />
       </div>
     </div>
   );
