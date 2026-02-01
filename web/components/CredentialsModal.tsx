@@ -84,7 +84,7 @@ export default function CredentialsModal({ onSave, onCancel }: CredentialsModalP
 
             <div>
               <label className="block text-sm font-medium text-slate-300 mb-1">
-                W&B Entity (optional)
+                W&B Entity
               </label>
               <input
                 type="text"
@@ -98,7 +98,7 @@ export default function CredentialsModal({ onSave, onCancel }: CredentialsModalP
 
           <div>
             <label className="block text-sm font-medium text-slate-300 mb-1">
-              Redis URL (optional)
+              Redis URL
             </label>
             <input
               type="text"
@@ -107,15 +107,12 @@ export default function CredentialsModal({ onSave, onCancel }: CredentialsModalP
               className="w-full px-3 py-2 bg-slate-700 text-white rounded-lg border border-slate-600 focus:border-primary-500 focus:outline-none"
               placeholder="redis://..."
             />
-            <p className="text-xs text-slate-400 mt-1">
-              Leave empty to use in-memory storage
-            </p>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-slate-300 mb-1">
-                Browserbase API Key (optional)
+                Browserbase API Key
               </label>
               <input
                 type="password"
@@ -128,7 +125,7 @@ export default function CredentialsModal({ onSave, onCancel }: CredentialsModalP
 
             <div>
               <label className="block text-sm font-medium text-slate-300 mb-1">
-                Browserbase Project ID (optional)
+                Browserbase Project ID
               </label>
               <input
                 type="text"
