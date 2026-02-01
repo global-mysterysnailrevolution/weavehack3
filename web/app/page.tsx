@@ -30,10 +30,6 @@ export default function Home() {
     setShowCredentialsModal(false);
   };
 
-  const handleUpdateExecution = (exec: AgentExecution) => {
-    setExecution(exec);
-  };
-
   return (
     <main className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
       <div className="container mx-auto px-4 py-8">
@@ -75,7 +71,7 @@ export default function Home() {
           <AgentDashboard
             credentials={credentials}
             execution={execution}
-            onUpdateExecution={handleUpdateExecution}
+            onUpdateExecution={setExecution}
           />
         ) : (
           <div className="text-center text-white py-20">

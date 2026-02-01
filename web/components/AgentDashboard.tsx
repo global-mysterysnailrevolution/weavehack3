@@ -13,7 +13,7 @@ import StatusPanel from './StatusPanel';
 interface AgentDashboardProps {
   credentials: Credentials;
   execution: AgentExecution | null;
-  onUpdateExecution: (execution: AgentExecution) => void;
+  onUpdateExecution: (update: AgentExecution | ((prev: AgentExecution | null) => AgentExecution)) => void;
 }
 
 export default function AgentDashboard({
