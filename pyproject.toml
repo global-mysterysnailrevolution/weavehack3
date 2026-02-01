@@ -17,6 +17,8 @@ dependencies = [
   "browserbase",
   "pillow",
   "httpx",
+  "fastapi",
+  "uvicorn[standard]",
 ]
 
 [project.scripts]

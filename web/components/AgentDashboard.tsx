@@ -38,9 +38,10 @@ export default function AgentDashboard({
     
     onUpdateExecution(newExecution);
 
-    try {
-      // Call backend API
-      const response = await fetch('/api/agent/run', {
+      try {
+      // Call backend API (works with Railway rewrites or direct backend URL)
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || '/api/agent/run';
+      const response = await fetch(apiUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

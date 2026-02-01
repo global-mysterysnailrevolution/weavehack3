@@ -1,0 +1,17 @@
+[phases.setup]
+nixPkgs = ["nodejs-18_x", "python310"]
+
+[phases.install]
+cmds = [
+  "cd web && npm install",
+  "pip install -e .",
+  "pip install fastapi uvicorn"
+]
+
+[phases.build]
+cmds = [
+  "cd web && npm run build"
+]
+
+[start]
+cmd = "cd web && npm start"

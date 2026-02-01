@@ -1,0 +1,18 @@
+# Files to ignore in Railway builds
+.venv/
+venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+node_modules/
+.next/
+.env
+.env.local
+*.log
+.git/
+notes/
+test_*.py
+*.md
+!README.md

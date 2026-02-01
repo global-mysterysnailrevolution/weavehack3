@@ -20,7 +20,11 @@ from rvla.web import WebDriver
 
 def format_update(update_type: str, data: dict[str, Any]) -> None:
     """Output an update in SSE format."""
-    print(f"UPDATE:{json.dumps({'type': update_type, **data})}", flush=True)
+    try:
+        update_json = json.dumps({'type': update_type, **data})
+        print(f"UPDATE:{update_json}", flush=True)
+    except Exception as e:
+        print(f"ERROR: Failed to format update: {e}", file=sys.stderr, flush=True)
 
 
 def main():
