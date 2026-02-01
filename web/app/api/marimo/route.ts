@@ -15,10 +15,7 @@ function getTargetBaseUrl(): URL | null {
   }
 }
 
-export async function GET(
-  req: NextRequest,
-  { params }: { params?: Promise<{ path?: string[] }> | { path?: string[] } }
-) {
+export async function GET(req: NextRequest) {
   const baseUrl = getTargetBaseUrl();
   
   if (!baseUrl) {
@@ -35,19 +32,8 @@ export async function GET(
   }
 
   try {
-    // Handle case where params might be undefined or empty (root path /api/marimo)
-    let resolvedParams: { path?: string[] } = {};
-    if (params) {
-      resolvedParams = await Promise.resolve(params);
-    }
-    
-    const pathParts = resolvedParams.path || [];
-    const relativePath = pathParts.length ? pathParts.join('/') : '';
-
-    // If no path, use base URL directly
-    const targetUrl = pathParts.length 
-      ? new URL(relativePath, baseUrl)
-      : new URL(baseUrl.toString());
+    // For root path, redirect to the base URL
+    const targetUrl = new URL(baseUrl.toString());
     req.nextUrl.searchParams.forEach((value, key) => {
       targetUrl.searchParams.append(key, value);
     });
