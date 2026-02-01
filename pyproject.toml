@@ -1,0 +1,30 @@
+[project]
+name = "rvla-weavehacks"
+version = "0.1.0"
+description = "Recursive VLA web-agent scaffold with Weave tracing"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [
+  { name = "WeaveHacks Team" }
+]
+dependencies = [
+  "wandb",
+  "weave",
+  "redis",
+  "openai",
+  "python-dotenv",
+  "browserbase",
+  "pillow",
+  "httpx",
+]
+
+[project.scripts]
+rvla-demo = "rvla.demo:main"
+
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
