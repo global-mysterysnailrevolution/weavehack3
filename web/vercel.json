@@ -7,6 +7,14 @@
     {
       "source": "/api/agent/:path*",
       "destination": "/api/agent/:path*"
+    },
+    {
+      "source": "/api/openclaw/:path*",
+      "destination": "/api/openclaw/:path*"
+    },
+    {
+      "source": "/api/marimo/:path*",
+      "destination": "/api/marimo/:path*"
     }
   ]
 }
