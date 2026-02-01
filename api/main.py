@@ -52,11 +52,26 @@ async def health():
 async def run_agent(request: AgentRequest):
     """Run the agent and stream updates via Server-Sent Events."""
     
-    # Set environment variables from credentials
+    # Use environment variables first (private), then fall back to request credentials
     env = os.environ.copy()
-    for key, value in request.credentials.items():
-        if value:
-            env[key.upper()] = str(value)
+    
+    # Map credential keys to environment variable names
+    env_var_map = {
+        'openai_api_key': 'OPENAI_API_KEY',
+        'wandb_api_key': 'WANDB_API_KEY',
+        'wandb_project': 'WANDB_PROJECT',
+        'wandb_entity': 'WANDB_ENTITY',
+        'redis_url': 'REDIS_URL',
+        'browserbase_api_key': 'BROWSERBASE_API_KEY',
+        'browserbase_project_id': 'BROWSERBASE_PROJECT_ID',
+    }
+    
+    # Prioritize environment variables, use request credentials as fallback
+    for cred_key, env_key in env_var_map.items():
+        # Use env var if available, otherwise use request credential
+        env_value = os.getenv(env_key) or request.credentials.get(cred_key, '')
+        if env_value:
+            env[env_key] = str(env_value)
     
     # Path to the API server script
     script_path = os.path.join(
