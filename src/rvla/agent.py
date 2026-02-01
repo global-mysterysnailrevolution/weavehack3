@@ -21,7 +21,7 @@ from rvla.web import Action, Observation, WebDriver
 class AgentState:
     goal: str
     depth: int = 0
-    max_depth: int = 3  # Increased for better recursion
+    max_depth: int = 5  # Increased for better recursion in complex tasks
     step_count: int = 0
     parent_goal: str | None = None  # Track parent goal for context
 
@@ -206,7 +206,7 @@ def run_agent(
     events.append(f"observe:{observation.url}")
     workspace.set("events", events)
 
-    for _ in range(10):  # Increased max steps
+    for _ in range(30):  # Increased max steps for complex multi-step tasks
         # Convert observation to dict for Weave
         obs_dict = None
         if observation:

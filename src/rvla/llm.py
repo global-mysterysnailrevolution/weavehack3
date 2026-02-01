@@ -57,11 +57,16 @@ Recent history:
 
 Current depth: {depth}
 
+For complex tasks involving multiple products or items:
+- Use "subcall" to break down the task into smaller subtasks (e.g., "Verify pricing for product X")
+- Each subcall can handle one product or one verification step
+- Navigate between websites as needed (e.g., Biolink Depot -> Google search -> vendor sites)
+
 Analyze the current page state and decide what to do next. Respond with JSON:
 {{
   "action_type": "act" | "subcall" | "done",
   "reasoning": "brief explanation of what you see and why you chose this action",
-  "task": "if action_type is subcall, the subtask to delegate",
+  "task": "if action_type is subcall, the subtask to delegate (e.g., 'Search Google for product X and verify pricing')",
   "command": "if action_type is act, the browser command (observe, click, type, scroll, navigate)",
   "target": "if command needs a target (e.g., CSS selector, XPath, visible text, or URL for navigate)",
   "text": "if command is 'type', the text to type"
@@ -114,7 +119,10 @@ Respond only with valid JSON."""
     )
 
     import json
-    result = json.loads(response.choices[0].message.content)
+    content = response.choices[0].message.content
+    if not content:
+        raise ValueError("OpenAI API returned empty content")
+    result = json.loads(content)
     return result
 
 
@@ -175,5 +183,8 @@ Respond with JSON:
     )
 
     import json
-    result = json.loads(response.choices[0].message.content)
+    content = response.choices[0].message.content
+    if not content:
+        raise ValueError("OpenAI API returned empty content")
+    result = json.loads(content)
     return result

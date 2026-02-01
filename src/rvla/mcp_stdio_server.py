@@ -279,7 +279,9 @@ def main():
             continue  # Skip empty lines
         
         try:
-            request = json.loads(line)
+            if not line or not line.strip():
+                continue
+            request = json.loads(line.strip())
             
             method = request.get("method")
             params = request.get("params", {})

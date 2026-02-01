@@ -115,7 +115,10 @@ Respond with JSON:
     )
 
     import json
-    result = json.loads(response.choices[0].message.content)
+    content = response.choices[0].message.content
+    if not content:
+        raise ValueError("OpenAI API returned empty content")
+    result = json.loads(content)
     return result
 
 
