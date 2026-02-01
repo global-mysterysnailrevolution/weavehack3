@@ -432,8 +432,14 @@ def handle_tools_call(tool_name: str, arguments: dict[str, Any], request_id: str
             trace_id = arguments.get("trace_id", "")
             
             try:
-                # Try to get the trace by ID
-                run = weave.get_op_run(trace_id) if trace_id else None
+                # Get all runs and find the one matching trace_id
+                runs = list(weave.get_op_runs(limit=1000))
+                run = None
+                for r in runs:
+                    run_id = getattr(r, "id", None) or str(r)[:50]
+                    if str(run_id) == str(trace_id) or str(trace_id) in str(run_id):
+                        run = r
+                        break
                 
                 if not run:
                     send_response(request_id, error={
