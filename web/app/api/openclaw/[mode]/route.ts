@@ -2,9 +2,26 @@ import { NextRequest } from 'next/server';
 
 export const runtime = 'nodejs';
 
+export async function GET(
+  req: NextRequest,
+  { params }: { params: Promise<{ mode: string }> | { mode: string } }
+) {
+  const resolvedParams = await Promise.resolve(params);
+  return new Response(
+    JSON.stringify({
+      error: 'Method not allowed. Use POST to run OpenClaw commands.',
+      hint: 'This endpoint requires POST requests with a JSON body containing { "goal": "...", "iteration": 0 }',
+    }),
+    {
+      status: 405,
+      headers: { 'Content-Type': 'application/json', 'Allow': 'POST' },
+    }
+  );
+}
+
 export async function POST(
   req: NextRequest,
-  { params }: { params: { mode: string } }
+  { params }: { params: Promise<{ mode: string }> | { mode: string } }
 ) {
   const apiBase = process.env.NEXT_PUBLIC_API_BASE_URL;
   
@@ -20,7 +37,8 @@ export async function POST(
     );
   }
 
-  const mode = params.mode;
+  const resolvedParams = await Promise.resolve(params);
+  const mode = resolvedParams.mode;
   if (mode !== 'beach' && mode !== 'sea') {
     return new Response(
       JSON.stringify({ error: 'Invalid mode. Use "beach" or "sea".' }),

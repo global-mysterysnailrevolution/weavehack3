@@ -3,18 +3,40 @@ import { NextRequest } from 'next/server';
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
-function getTargetBaseUrl(): URL {
+function getTargetBaseUrl(): URL | null {
   const raw = process.env.MARIMO_PROXY_URL;
   if (!raw) {
-    throw new Error('MARIMO_PROXY_URL is not set');
+    return null;
   }
-  return new URL(raw);
+  try {
+    return new URL(raw);
+  } catch {
+    return null;
+  }
 }
 
-export async function GET(req: NextRequest, { params }: { params: { path?: string[] } }) {
+export async function GET(
+  req: NextRequest,
+  { params }: { params: Promise<{ path?: string[] }> | { path?: string[] } }
+) {
+  const resolvedParams = await Promise.resolve(params);
+  const baseUrl = getTargetBaseUrl();
+  
+  if (!baseUrl) {
+    return new Response(
+      JSON.stringify({ 
+        error: 'MARIMO_PROXY_URL is not configured. Set it in Vercel environment variables.',
+        hint: 'Point it to your published Marimo notebook URL (e.g., https://marimo.app/l/...)'
+      }),
+      { 
+        status: 503, 
+        headers: { 'Content-Type': 'application/json' } 
+      }
+    );
+  }
+
   try {
-    const baseUrl = getTargetBaseUrl();
-    const pathParts = params.path || [];
+    const pathParts = resolvedParams.path || [];
     const relativePath = pathParts.length ? pathParts.join('/') : '';
 
     const targetUrl = new URL(relativePath, baseUrl);
