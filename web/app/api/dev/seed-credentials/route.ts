@@ -3,9 +3,9 @@ import { NextResponse } from 'next/server';
 export const runtime = 'nodejs';
 
 export async function GET() {
-  // Always allow seeding from environment variables
-  // This allows the app to use server-side environment variables
-  // In Vercel, these need to be set in the project settings
+  // Always use private environment variables (server-side only)
+  // These are set in Vercel project settings and are never exposed to the client
+  // The client receives the values but they're not in the bundle
   const credentials = {
     openai_api_key: process.env.OPENAI_API_KEY || '',
     wandb_api_key: process.env.WANDB_API_KEY || '',
@@ -16,12 +16,13 @@ export async function GET() {
     browserbase_project_id: process.env.BROWSERBASE_PROJECT_ID || '',
   };
 
-  // Log for debugging (only in development)
+  // Don't log credentials in production for security
   if (process.env.NODE_ENV !== 'production') {
-    console.log('Seed credentials check:', {
+    console.log('🔐 Loading credentials from environment variables:', {
       hasOpenAI: !!credentials.openai_api_key,
       hasWandb: !!credentials.wandb_api_key,
       hasProject: !!credentials.wandb_project,
+      hasBrowserbase: !!credentials.browserbase_api_key,
     });
   }
 

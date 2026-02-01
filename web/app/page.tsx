@@ -14,7 +14,7 @@ export default function Home() {
   const [logoImageError, setLogoImageError] = useState(false);
 
   useEffect(() => {
-    // First, try to load from environment variables via API
+    // Always try to load from environment variables first (private env vars)
     const loadCredentialsFromEnv = async () => {
       try {
         const response = await fetch('/api/dev/seed-credentials');
@@ -22,31 +22,30 @@ export default function Home() {
           const envCreds = await response.json();
           // Check if we have the minimum required credentials
           if (envCreds.openai_api_key && envCreds.wandb_api_key && envCreds.wandb_project) {
-            console.log('Loaded credentials from environment variables');
+            console.log('✅ Using credentials from environment variables');
             setCredentials(envCreds as Credentials);
-            localStorage.setItem('rvla_credentials', JSON.stringify(envCreds));
+            // Don't save to localStorage - always use fresh env vars
             setShowCredentialsModal(false);
             return;
           } else {
-            console.log('Environment variables found but incomplete:', {
+            console.warn('⚠️ Environment variables incomplete:', {
               hasOpenAI: !!envCreds.openai_api_key,
               hasWandb: !!envCreds.wandb_api_key,
               hasProject: !!envCreds.wandb_project
             });
           }
-        } else {
-          console.log('API route returned error:', response.status);
         }
       } catch (e) {
-        console.log('Failed to fetch environment credentials:', e);
+        console.error('Failed to fetch environment credentials:', e);
       }
 
-      // Fallback to localStorage if env vars not available
+      // Fallback to localStorage only if env vars are not available
       const saved = localStorage.getItem('rvla_credentials');
       if (saved) {
         try {
           const creds = JSON.parse(saved);
           if (creds.openai_api_key && creds.wandb_api_key && creds.wandb_project) {
+            console.log('Using credentials from localStorage (fallback)');
             setCredentials(creds);
             setShowCredentialsModal(false);
             return;
@@ -56,7 +55,7 @@ export default function Home() {
         }
       }
       
-      // Only show modal if we don't have credentials
+      // Only show modal if we don't have credentials from env vars or localStorage
       setShowCredentialsModal(true);
     };
 
@@ -133,12 +132,19 @@ export default function Home() {
         )}
 
         {credentials && (
-          <div className="mb-4 flex justify-end">
+          <div className="mb-4 flex justify-between items-center">
+            <div className="text-sm text-slate-300">
+              {process.env.NODE_ENV === 'development' && (
+                <span className="px-2 py-1 bg-green-900/50 text-green-300 rounded text-xs">
+                  Using environment variables
+                </span>
+              )}
+            </div>
             <button
               onClick={() => setShowCredentialsModal(true)}
-              className="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition-colors backdrop-blur-sm bg-opacity-80"
+              className="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition-colors backdrop-blur-sm bg-opacity-80 text-sm"
             >
-              Update Credentials
+              Override Credentials
             </button>
           </div>
         )}
