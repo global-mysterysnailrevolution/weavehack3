@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Credentials } from '@/types';
 import { X } from 'lucide-react';
 
@@ -13,6 +13,25 @@ export default function CredentialsModal({ onSave, onCancel }: CredentialsModalP
   const [formData, setFormData] = useState<Partial<Credentials>>({
     wandb_project: 'weavehacks-rvla',
   });
+
+  useEffect(() => {
+    const saved = localStorage.getItem('rvla_credentials');
+    if (saved) {
+      return;
+    }
+
+    // Always try to load from environment variables
+    fetch('/api/dev/seed-credentials')
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data: Partial<Credentials> | null) => {
+        if (!data) return;
+        setFormData((prev) => ({ ...prev, ...data }));
+        if (data.openai_api_key && data.wandb_api_key && data.wandb_project) {
+          onSave(data as Credentials);
+        }
+      })
+      .catch(() => undefined);
+  }, [onSave]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
