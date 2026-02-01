@@ -8,6 +8,7 @@ import ObservationViewer from './ObservationViewer';
 import ActionHistory from './ActionHistory';
 import RLMVisualization from './RLMVisualization';
 import WeaveTraceViewer from './WeaveTraceViewer';
+import MarimoEmbed from './MarimoEmbed';
 import StatusPanel from './StatusPanel';
 
 interface AgentDashboardProps {
@@ -22,6 +23,7 @@ export default function AgentDashboard({
   onUpdateExecution,
 }: AgentDashboardProps) {
   const [isRunning, setIsRunning] = useState(false);
+  const marimoUrl = process.env.NEXT_PUBLIC_MARIMO_URL;
 
   const handleStartExecution = async (goal: string) => {
     setIsRunning(true);
@@ -169,6 +171,7 @@ export default function AgentDashboard({
         <ActionHistory actions={execution?.trajectory || []} />
         <RLMVisualization execution={execution} />
         <WeaveTraceViewer execution={execution} credentials={credentials} />
+        <MarimoEmbed src={marimoUrl} />
       </div>
     </div>
   );
