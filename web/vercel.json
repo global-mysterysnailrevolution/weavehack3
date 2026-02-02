@@ -13,6 +13,10 @@
       "destination": "/api/openclaw/:path*"
     },
     {
+      "source": "/api/marimo",
+      "destination": "/api/marimo"
+    },
+    {
       "source": "/api/marimo/:path*",
       "destination": "/api/marimo/:path*"
     }
